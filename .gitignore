@@ -1,0 +1,66 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+# If you prefer to keep lockfile, remove the previous line
+
+# Vite / build output
+dist/
+build/
+.cache/
+.vite/
+
+# dotenv environment variables
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Mac specific
+*.DS_Store
+
+# Windows specific
+ehthumbs.db
+
+# Test coverage
+coverage/
+
+# Misc
+*.local
+*.tmp
+*.temp
+
+# Server runtime
+pids/
+*.pid
+*.seed
+
+# Optional: Cloudinary uploads or other large artifacts
+uploads/
+
+# Ignore built client in server folder if present
+server/dist/
+client/dist/
+
+# Ignore node global install folder
+.npm/
+
+# Ignore IDE specific settings
+.vscode/*
+!/.vscode/settings.json

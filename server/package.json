@@ -1,0 +1,36 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^7.0.0",
+    "dotenv": "^16.0.0",
+    "cors": "^2.8.5",
+    "morgan": "^1.10.0",
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3",
+    "multer": "^1.4.5-lts.1",
+    "sharp": "^0.32.1",
+    "cloudinary": "^1.32.0",
+    "joi": "^17.9.2",
+  "razorpay": "^2.9.2",
+    "csv-parse": "^5.3.6",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.7.0",
+    "ioredis": "^5.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.0"
+  }
+}
