@@ -1,6 +1,10 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Prefer Vite-provided env var VITE_API_URL. Fall back to legacy VITE_BACKEND_URL or a sensible default.
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  "http://localhost:3000";
 
 export const api = axios.create({
   baseURL: API_BASE + "/api",
@@ -153,6 +157,36 @@ export async function removeCartCoupon() {
 
 export async function fetchOrder(id) {
   const res = await api.get(`/orders/${id}`);
+  return res.data;
+}
+
+export async function fetchProfile() {
+  const res = await api.get(`/users/me`);
+  return res.data;
+}
+
+export async function updateProfile(payload) {
+  const res = await api.put(`/users/me`, payload);
+  return res.data;
+}
+
+export async function addAddress(payload) {
+  const res = await api.post(`/users/me/addresses`, payload);
+  return res.data;
+}
+
+export async function updateAddress(id, payload) {
+  const res = await api.put(`/users/me/addresses/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteAddress(id) {
+  const res = await api.delete(`/users/me/addresses/${id}`);
+  return res.data;
+}
+
+export async function fetchMyOrders() {
+  const res = await api.get(`/users/me/orders`);
   return res.data;
 }
 

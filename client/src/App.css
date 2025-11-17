@@ -3,10 +3,19 @@
 }
 
 /* App container used across pages */
+/* Remove max-width on #root so sections can be full-bleed (hero, nav bars).
+   Use `.app-container` to constrain inner content instead. */
 #root {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: var(--page-padding);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* hero full-bleed helper (used by Home.jsx .hero-wrap) */
+.hero-wrap {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
 }
 
 .logo {

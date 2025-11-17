@@ -14,6 +14,10 @@ export function getAccess() {
   return localStorage.getItem("access");
 }
 
+export function getRefresh() {
+  return localStorage.getItem("refresh");
+}
+
 export function isAuthenticated() {
   return !!getAccess();
 }
@@ -64,4 +68,18 @@ export function clearAllAuth() {
   } catch {
     /* ignore */
   }
+}
+
+// logout: call server to revoke refresh token, then clear local storage
+export async function logout() {
+  try {
+    const refresh = getRefresh();
+    if (refresh) {
+      // best-effort server call to invalidate refresh token
+      await api.post("/auth/logout", { token: refresh }).catch(() => {});
+    }
+  } catch {
+    // ignore
+  }
+  clearAllAuth();
 }

@@ -1,12 +1,17 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import api from "../lib/api";
+import { generateSku } from "../lib/sku";
 import { useToast } from "../components/ToastProvider";
 import { useConfirm } from "../components/ConfirmProvider";
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null); // product being edited
+  const [newProductMrp, setNewProductMrp] = useState("");
+  const [newProductPrice, setNewProductPrice] = useState("");
   const [page] = useState(1);
   const [limit] = useState(50);
   const [stockPreview, setStockPreview] = useState(null);
@@ -29,9 +34,31 @@ export default function AdminProducts() {
     setLoading(false);
   }, [page, limit, showToast]);
 
+  const loadBrands = useCallback(async () => {
+    try {
+      const res = await api.get("/brands");
+      const list = (res.data && res.data.data) || res.data || [];
+      setBrands(list || []);
+    } catch (err) {
+      console.error("Failed to load brands", err);
+    }
+  }, []);
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const res = await api.get("/categories");
+      const list = (res.data && res.data.data) || res.data || [];
+      setAllCategories(list || []);
+    } catch (err) {
+      console.error("Failed to load categories", err);
+    }
+  }, []);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadBrands();
+    loadCategories();
+  }, [load, loadBrands, loadCategories]);
 
   const startEdit = (p) => {
     // clone to avoid mutating list
@@ -44,6 +71,15 @@ export default function AdminProducts() {
         value: val,
       })),
     }));
+    // ensure each variant has a sku (generate if missing)
+    copy.variants = (copy.variants || []).map((v) => ({
+      ...v,
+      sku: v.sku || generateSku("PROD"),
+    }));
+    // normalize categories to array of ids for the UI
+    copy.categories = (copy.categories || []).map((c) =>
+      typeof c === "string" ? c : (c && c._id) || c
+    );
     setEditing(copy);
   };
 
@@ -58,7 +94,7 @@ export default function AdminProducts() {
       // prepare variants for server (convert attributesArray -> attributes object)
       const variants = (editing.variants || []).map((v) => ({
         name: v.name,
-        sku: v.sku,
+        sku: v.sku || generateSku("PROD"),
         mrp: v.mrp ? Number(v.mrp) : undefined,
         price: v.price ? Number(v.price) : undefined,
         stock: v.stock ? Number(v.stock) : 0,
@@ -72,7 +108,13 @@ export default function AdminProducts() {
       const payload = {
         title: editing.title,
         description: editing.description,
+        // keep legacy brand string but send normalized brandId when present
         brand: editing.brand,
+        brandId: editing.brandId || null,
+        // categories should be array of ids
+        categories: (editing.categories || []).map((c) =>
+          typeof c === "string" ? c : (c && c._id) || c
+        ),
         variants,
         images: (editing.images || []).map((img, i) => ({
           url: img.url,
@@ -132,6 +174,10 @@ export default function AdminProducts() {
               ),
             }));
             copy.images = copy.images || [];
+            copy.categories = (copy.categories || []).map((c) =>
+              typeof c === "string" ? c : (c && c._id) || c
+            );
+            copy.brandId = copy.brandId || null;
             setEditing(copy);
           }
         } catch (err) {
@@ -208,7 +254,21 @@ export default function AdminProducts() {
           }}
         >
           <div>Products ({products.length})</div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              className="input"
+              placeholder="MRP"
+              style={{ width: 110 }}
+              value={newProductMrp}
+              onChange={(e) => setNewProductMrp(e.target.value)}
+            />
+            <input
+              className="input"
+              placeholder="Price"
+              style={{ width: 110 }}
+              value={newProductPrice}
+              onChange={(e) => setNewProductPrice(e.target.value)}
+            />
             <button
               className="btn btn-primary"
               onClick={async () => {
@@ -219,7 +279,26 @@ export default function AdminProducts() {
                     title.toLowerCase().replace(/[^a-z0-9]+/g, "-") +
                     "-" +
                     Date.now();
-                  const res = await api.post("/products", { title, slug });
+                  const payload = { title, slug };
+                  const mrpNum = newProductMrp
+                    ? Number(newProductMrp)
+                    : undefined;
+                  const priceNum = newProductPrice
+                    ? Number(newProductPrice)
+                    : undefined;
+                  if (!isNaN(mrpNum) || !isNaN(priceNum)) {
+                    payload.variants = [
+                      {
+                        name: "Default",
+                        sku: "",
+                        mrp: mrpNum,
+                        price: priceNum,
+                        stock: 0,
+                        attributes: {},
+                      },
+                    ];
+                  }
+                  const res = await api.post("/products", payload);
                   const prod = (res.data && res.data.data) || res.data;
                   if (prod) {
                     // prepare for editing
@@ -231,7 +310,15 @@ export default function AdminProducts() {
                       ),
                     }));
                     copy.images = copy.images || [];
+                    // normalize categories and ensure brandId is present for UI
+                    copy.categories = (copy.categories || []).map((c) =>
+                      typeof c === "string" ? c : (c && c._id) || c
+                    );
+                    copy.brandId = copy.brandId || null;
                     setEditing(copy);
+                    // clear defaults after create
+                    setNewProductMrp("");
+                    setNewProductPrice("");
                     load();
                   }
                 } catch (err) {
@@ -456,11 +543,65 @@ export default function AdminProducts() {
                   </td>
                   <td>{p.brand}</td>
                   <td>
-                    ₹
-                    {(p.variants &&
-                      p.variants[0] &&
-                      (p.variants[0].price || p.variants[0].mrp)) ||
-                      "—"}
+                    {(() => {
+                      const v0 = p.variants && p.variants[0];
+                      if (!v0) return "—";
+                      const mrp = typeof v0.mrp !== "undefined" ? v0.mrp : null;
+                      const price =
+                        typeof v0.price !== "undefined" ? v0.price : null;
+                      const displayPrice = price || mrp || null;
+                      return (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <div>
+                            {mrp && price && mrp > price ? (
+                              <span
+                                style={{
+                                  color: "var(--muted)",
+                                  marginRight: 8,
+                                }}
+                              >
+                                <s>₹{mrp}</s>
+                              </span>
+                            ) : mrp ? (
+                              <span
+                                style={{
+                                  color: "var(--muted)",
+                                  marginRight: 8,
+                                }}
+                              >
+                                ₹{mrp}
+                              </span>
+                            ) : null}
+                            {displayPrice ? (
+                              <span style={{ fontWeight: 700 }}>
+                                ₹{displayPrice}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                          </div>
+                          {mrp && price && mrp > price && (
+                            <div
+                              style={{
+                                background: "var(--accent-2)",
+                                color: "white",
+                                padding: "2px 6px",
+                                borderRadius: 6,
+                                fontSize: 12,
+                              }}
+                            >
+                              -{Math.round((1 - price / mrp) * 100)}%
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td>
                     {(p.variants &&
@@ -543,13 +684,60 @@ export default function AdminProducts() {
               </div>
               <div className="mt-2">
                 <label className="block text-sm font-medium">Brand</label>
-                <input
-                  className="input w-full"
-                  value={editing.brand || ""}
-                  onChange={(e) =>
-                    setEditing({ ...editing, brand: e.target.value })
-                  }
-                />
+                {brands && brands.length > 0 ? (
+                  <select
+                    className="input w-full"
+                    value={editing.brandId || ""}
+                    onChange={(e) => {
+                      const val = e.target.value || null;
+                      const brandObj = brands.find((b) => b._id === val);
+                      setEditing({
+                        ...editing,
+                        brandId: val,
+                        brand: brandObj ? brandObj.name : editing.brand,
+                      });
+                    }}
+                  >
+                    <option value="">-- Select brand --</option>
+                    {brands.map((b) => (
+                      <option key={b._id} value={b._id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    className="input w-full"
+                    value={editing.brand || ""}
+                    onChange={(e) =>
+                      setEditing({ ...editing, brand: e.target.value })
+                    }
+                    placeholder="Brand name"
+                  />
+                )}
+                <div style={{ marginTop: 8 }}>
+                  <label className="block text-sm font-medium">
+                    Categories
+                  </label>
+                  <select
+                    className="input w-full"
+                    multiple
+                    value={editing.categories || []}
+                    onChange={(e) => {
+                      const opts = Array.from(e.target.selectedOptions).map(
+                        (o) => o.value
+                      );
+                      setEditing({ ...editing, categories: opts });
+                    }}
+                    style={{ minHeight: 120 }}
+                  >
+                    {(allCategories || []).map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div className="mt-2">
                 <label className="block text-sm font-medium">Images</label>
@@ -741,6 +929,10 @@ export default function AdminProducts() {
                               v.attributes || {}
                             ).map(([k, val]) => ({ key: k, value: val })),
                           }));
+                          copy.categories = (copy.categories || []).map((c) =>
+                            typeof c === "string" ? c : (c && c._id) || c
+                          );
+                          copy.brandId = copy.brandId || null;
                           setEditing(copy);
                           load();
                         }
@@ -786,6 +978,10 @@ export default function AdminProducts() {
                             ).map(([k, val]) => ({ key: k, value: val })),
                           }));
                           copy.images = copy.images || [];
+                          copy.categories = (copy.categories || []).map((c) =>
+                            typeof c === "string" ? c : (c && c._id) || c
+                          );
+                          copy.brandId = copy.brandId || null;
                           setEditing(copy);
                         }
                       } catch (err) {
@@ -977,7 +1173,7 @@ export default function AdminProducts() {
                       copy.variants = copy.variants || [];
                       copy.variants.push({
                         name: "",
-                        sku: "",
+                        sku: generateSku("PROD"),
                         mrp: "",
                         price: "",
                         stock: 0,

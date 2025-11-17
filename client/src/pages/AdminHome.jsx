@@ -56,6 +56,34 @@ export default function AdminHome() {
           </div>
         </Link>
 
+        <Link to="/admin/brands" className="card hover-card">
+          <div style={{ fontWeight: 700 }}>Brands</div>
+          <div style={{ color: "var(--muted)", marginTop: 6 }}>
+            Manage brands and brand metadata.
+          </div>
+        </Link>
+
+        <Link to="/admin/categories" className="card hover-card">
+          <div style={{ fontWeight: 700 }}>Categories</div>
+          <div style={{ color: "var(--muted)", marginTop: 6 }}>
+            Create and manage product categories.
+          </div>
+        </Link>
+
+        <Link to="/admin/users" className="card hover-card">
+          <div style={{ fontWeight: 700 }}>Users</div>
+          <div style={{ color: "var(--muted)", marginTop: 6 }}>
+            Manage admin and customer accounts.
+          </div>
+        </Link>
+
+        <Link to="/admin/coupons" className="card hover-card">
+          <div style={{ fontWeight: 700 }}>Coupons</div>
+          <div style={{ color: "var(--muted)", marginTop: 6 }}>
+            Create and validate discount coupons.
+          </div>
+        </Link>
+
         <Link to="/admin-upload" className="card hover-card">
           <div style={{ fontWeight: 700 }}>Data Upload</div>
           <div style={{ color: "var(--muted)", marginTop: 6 }}>

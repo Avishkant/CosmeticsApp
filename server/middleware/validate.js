@@ -47,7 +47,12 @@ export const schemas = {
   couponCreate: Joi.object({
     code: Joi.string().uppercase().required(),
     type: Joi.string().valid("percentage", "flat").required(),
-    value: Joi.number().required(),
+    // If percentage, enforce 0-100. If flat, value must be >= 0.
+    value: Joi.when("type", {
+      is: "percentage",
+      then: Joi.number().min(0).max(100).required(),
+      otherwise: Joi.number().min(0).required(),
+    }),
     appliesTo: Joi.object().optional(),
     usageLimit: Joi.number().optional(),
     perUserLimit: Joi.number().optional(),

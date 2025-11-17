@@ -22,7 +22,10 @@ const ProductSchema = new mongoose.Schema(
     title: { type: String, required: true },
     slug: { type: String, index: true, unique: true, required: true },
     sku: { type: String, index: true },
+    // legacy free-text brand for backward compatibility
     brand: String,
+    // normalized brand reference
+    brandId: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
     description: String,
     images: [ImageSchema],
     variants: [VariantSchema],

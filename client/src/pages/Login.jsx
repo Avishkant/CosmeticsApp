@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, saveTokens, saveUser } from "../lib/auth";
+import { useToast } from "../components/ToastProvider";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +19,14 @@ export default function Login() {
         saveTokens(access, refresh);
       }
       if (user) saveUser(user);
-      navigate("/");
+      // Show toast then redirect (admins -> admin portal)
+      const msg =
+        user && user.role === "admin" ? "Welcome back, admin" : "Logged in";
+      showToast(msg, "success");
+      setTimeout(() => {
+        if (user && user.role === "admin") navigate("/admin");
+        else navigate("/");
+      }, 600);
     } catch (err) {
       setError(err?.response?.data?.error || "Login failed");
     }

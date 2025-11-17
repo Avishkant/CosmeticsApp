@@ -9,6 +9,10 @@ import cartRouter from "./routes/cart.js";
 import ordersRouter from "./routes/orders.js";
 import couponsRouter from "./routes/coupons.js";
 import adminProductsRouter from "./routes/adminProducts.js";
+import brandsRouter from "./routes/brands.js";
+import categoriesRouter from "./routes/categories.js";
+import adminUsersRouter from "./routes/adminUsers.js";
+import usersRouter from "./routes/users.js";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { sanitize } from "./middleware/sanitize.js";
@@ -42,8 +46,15 @@ app.use("/api/products", productsRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/orders", ordersRouter);
-app.use("/api/coupons", couponsRouter);
+// couponsRouter contains both admin routes (e.g. /admin/coupons)
+// and a public validate route (/coupons/validate). Mount it at /api
+// so the routes become /api/admin/coupons and /api/coupons/validate.
+app.use("/api", couponsRouter);
 app.use("/api/admin/products", adminProductsRouter);
+app.use("/api/brands", brandsRouter);
+app.use("/api/categories", categoriesRouter);
+app.use("/api/admin/users", adminUsersRouter);
+app.use("/api/users", usersRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {

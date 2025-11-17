@@ -1,17 +1,21 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { isAuthenticated, clearAllAuth, saveUser, getUser } from "../lib/auth";
+import { isAuthenticated, logout, saveUser, getUser } from "../lib/auth";
 import { getCart, default as api } from "../lib/api";
 import { useEffect, useState } from "react";
 
 export default function Header() {
   const navigate = useNavigate();
-  const handleLogout = () => {
-    clearAllAuth();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
   const [cartInfo, setCartInfo] = useState(null);
   const [userState, setUserState] = useState(getUser());
+
+  // Keep a derived currentUser that prefers latest localStorage value so
+  // the header reacts immediately after login without requiring a full reload.
+  const currentUser = getUser() || userState;
 
   useEffect(() => {
     let mounted = true;
@@ -43,84 +47,46 @@ export default function Header() {
   }, []);
 
   return (
-    <header
-      style={{
-        backdropFilter: "blur(6px)",
-        borderBottom: "1px solid rgba(255,255,255,0.03)",
-      }}
-    >
-      <div
-        className="app-container"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingTop: 12,
-          paddingBottom: 12,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+    <header className="site-header">
+      <div className="header-top app-container">
+        <div className="header-left">
           <Link
-            to="/"
-            className="text-lg font-semibold"
-            style={{ display: "flex", alignItems: "center", gap: 10 }}
+            to={currentUser && currentUser.role === "admin" ? "/admin" : "/"}
+            className="brand"
           >
-            <div
-              className="logo float-slow"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 10,
-                background:
-                  "linear-gradient(90deg,var(--accent),var(--accent-2))",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontWeight: 800,
-              }}
-            >
-              C
-            </div>
-            <div style={{ fontWeight: 800 }}>CosmeticsApp</div>
+            <div className="logo">B</div>
+            <div className="brand-name">Beautiq</div>
           </Link>
         </div>
 
-        <nav style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <Link to="/" className="badge">
-            Products
-          </Link>
-          <Link to="/cart" className="badge">
-            Cart
-            {cartInfo && cartInfo.coupon ? ` • ${cartInfo.coupon.code}` : ""}
-          </Link>
+        <div className="header-center">
+          <form className="search-form" onSubmit={(e) => e.preventDefault()}>
+            <input
+              className="search-input"
+              placeholder="Search for a product or brand"
+            />
+            <button type="submit" className="search-btn">
+              🔍
+            </button>
+          </form>
+        </div>
+
+        <div className="header-right">
           {isAuthenticated() ? (
             <>
-              {userState && userState.role === "admin" && (
-                <>
-                  <Link to="/admin" className="btn btn-ghost">
-                    Admin
-                  </Link>
-                  <Link to="/admin/products" className="btn btn-ghost">
-                    Products
-                  </Link>
-                  <Link to="/admin/orders" className="btn btn-ghost">
-                    Orders
-                  </Link>
-                  <Link to="/admin/payments" className="btn btn-ghost">
-                    Payments
-                  </Link>
-                  <Link to="/admin-upload" className="btn btn-ghost">
-                    Upload
-                  </Link>
-                </>
+              {currentUser && currentUser.role === "admin" && (
+                <Link
+                  to="/admin"
+                  className="btn btn-ghost"
+                  style={{ marginRight: 8 }}
+                >
+                  Dashboard
+                </Link>
               )}
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div className="text-sm text-muted">{userState?.email}</div>
-                <button onClick={handleLogout} className="btn btn-outline">
-                  Logout
-                </button>
-              </div>
+              <div className="user-email">{currentUser?.email}</div>
+              <button onClick={handleLogout} className="btn btn-outline">
+                Logout
+              </button>
             </>
           ) : (
             <>
@@ -132,8 +98,69 @@ export default function Header() {
               </Link>
             </>
           )}
-        </nav>
+          {/* account/cart icons */}
+          <div className="icons">
+            <Link to="/account" className="icon-link">
+              👤
+            </Link>
+            {(currentUser?.role || "user") !== "admin" && (
+              <Link to="/cart" className="icon-link">
+                🛒
+                {cartInfo && cartInfo.coupon
+                  ? ` • ${cartInfo.coupon.code}`
+                  : ""}
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* primary categories row */}
+      <div className="top-nav">
+        <div className="nav-inner app-container">
+          <nav className="primary-nav">
+            {currentUser && currentUser.role === "admin" ? (
+              // Admin nav links
+              <>
+                <Link to="/admin" className="nav-link">
+                  Dashboard
+                </Link>
+                <Link to="/admin/products" className="nav-link">
+                  Products
+                </Link>
+                <Link to="/admin/orders" className="nav-link">
+                  Orders
+                </Link>
+                <Link to="/admin/payments" className="nav-link">
+                  Payments
+                </Link>
+                <Link to="/admin/users" className="nav-link">
+                  Users
+                </Link>
+                <Link to="/admin/coupons" className="nav-link">
+                  Coupons
+                </Link>
+              </>
+            ) : (
+              // Public nav links
+              <>
+                <a>Brands</a>
+                <a>Holidays</a>
+                <a>Sale</a>
+                <a>Skin Care</a>
+                <a>Hair</a>
+                <a>Makeup</a>
+                <a>Bath &amp; Body</a>
+                <a>Fragrance</a>
+                <a>Self Care</a>
+                <a>Tools</a>
+              </>
+            )}
+          </nav>
+        </div>
+      </div>
+
+      {/* removed secondary nav to keep a single navbar */}
     </header>
   );
 }
