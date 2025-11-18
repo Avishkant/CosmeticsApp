@@ -4,13 +4,21 @@ import {
   verifyPayment,
   applyCartCoupon,
   removeCartCoupon,
+  fetchProfile,
+  addAddress,
+  updateAddress,
 } from "../lib/api";
 import { useCart } from "../contexts/CartContext";
 import { useNavigate } from "react-router-dom";
+import AddressModal from "../components/AddressModal";
+import { useToast } from "../components/ToastProvider";
 
 export default function Cart() {
   const { cart, loading, loadCart, removeItem, updateQty } = useCart();
 
+  const { showToast } = useToast();
+  const [profile, setProfile] = useState(null);
+  const [addresses, setAddresses] = useState([]);
   const handleRemove = async (itemId) => {
     await removeItem(itemId);
   };
@@ -29,6 +37,9 @@ export default function Cart() {
   const [processing, setProcessing] = useState(false);
   const navigate = useNavigate();
   const [discount, setDiscount] = useState(0);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
 
   const handleApplyCoupon = async () => {
     if (!coupon) return;
@@ -53,6 +64,63 @@ export default function Cart() {
     0
   );
 
+  // load profile and addresses for selection in cart
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const p = await fetchProfile();
+        if (!mounted) return;
+        const prof = p.data || p;
+        setProfile(prof);
+        const addrs = (prof && prof.addresses) || [];
+        setAddresses(addrs);
+        if (addrs && addrs.length) setSelectedAddress(addrs[0]);
+      } catch (e) {
+        console.error("Failed to load profile for cart", e);
+      }
+    })();
+    return () => (mounted = false);
+  }, []);
+
+  const openNewAddress = () => {
+    setEditingAddress({
+      label: "Home",
+      name: profile?.name || "",
+      phone: profile?.phone || "",
+      addressLine1: "",
+      city: "",
+      state: "",
+      pincode: "",
+    });
+    setShowAddressModal(true);
+  };
+
+  const handleSaveAddress = async (addr) => {
+    try {
+      if (addr._id) {
+        await updateAddress(addr._id, addr);
+        // reload profile
+        const p = await fetchProfile();
+        const prof = p.data || p;
+        setProfile(prof);
+        setAddresses(prof.addresses || []);
+      } else {
+        const res = await addAddress(addr);
+        const saved = res.data || res;
+        setAddresses((a) => [...a, saved]);
+        setSelectedAddress(saved);
+      }
+      setShowAddressModal(false);
+      setEditingAddress(null);
+      showToast("Address saved", "success");
+    } catch (e) {
+      console.error(e);
+      showToast("Failed to save address", "error");
+      throw e;
+    }
+  };
+
   const loadRazorpay = () =>
     new Promise((resolve, reject) => {
       if (window.Razorpay) return resolve(true);
@@ -67,14 +135,28 @@ export default function Cart() {
   const handleCheckout = async () => {
     setProcessing(true);
     try {
+      if (!selectedAddress) {
+        alert("Please select or add a delivery address before checkout");
+        setProcessing(false);
+        return;
+      }
       const payload = {
-        items: cart.items.map((i) => ({
+        items: (cart.items || []).map((i) => ({
           productId: i.productId._id || i.productId,
           variantId: i.variantId,
           qty: i.qty,
           price: i.price,
         })),
-        shipping: { cost: 0 },
+        shipping: {
+          address: selectedAddress.addressLine1 || "",
+          city: selectedAddress.city || "",
+          state: selectedAddress.state || "",
+          pincode: selectedAddress.pincode || "",
+          name: selectedAddress.name || "",
+          phone: selectedAddress.phone || "",
+          label: selectedAddress.label || "",
+          cost: 0,
+        },
         couponCode: coupon || null,
         paymentMethod: "razorpay",
       };
@@ -181,6 +263,55 @@ export default function Cart() {
 
       <div className="mt-6 flex justify-between items-start gap-6">
         <div className="w-1/3">
+          <h3 className="font-medium mb-2">Delivery Address</h3>
+          {addresses && addresses.length ? (
+            <div className="space-y-2 mb-4">
+              {addresses.map((a) => (
+                <label
+                  key={a._id}
+                  className={`p-3 border rounded block ${
+                    selectedAddress &&
+                    String(selectedAddress._id) === String(a._id)
+                      ? "bg-indigo-50"
+                      : ""
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="addr"
+                    checked={
+                      selectedAddress &&
+                      String(selectedAddress._id) === String(a._id)
+                    }
+                    onChange={() => setSelectedAddress(a)}
+                  />{" "}
+                  <strong>{a.label}</strong> — {a.addressLine1}, {a.city}{" "}
+                  {a.pincode}
+                </label>
+              ))}
+              <div className="mt-2">
+                <button
+                  type="button"
+                  className="px-3 py-1 bg-indigo-600 text-white rounded"
+                  onClick={openNewAddress}
+                >
+                  Add Address
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-4">
+              No saved addresses.{" "}
+              <button
+                type="button"
+                className="px-2 py-1 bg-indigo-600 text-white rounded ml-2"
+                onClick={openNewAddress}
+              >
+                Add one
+              </button>
+            </div>
+          )}
+
           <h3 className="font-medium">Apply coupon</h3>
           <div className="mt-2 flex gap-2">
             <input
@@ -246,6 +377,16 @@ export default function Cart() {
           </div>
         </div>
       </div>
+      {showAddressModal && (
+        <AddressModal
+          address={editingAddress}
+          onSave={handleSaveAddress}
+          onCancel={() => {
+            setShowAddressModal(false);
+            setEditingAddress(null);
+          }}
+        />
+      )}
     </div>
   );
 }

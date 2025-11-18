@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from "react";
-import {
-  getCart,
-  fetchProfile,
-  createCheckout,
-  verifyPayment,
-} from "../lib/api";
+import { fetchProfile, createCheckout, verifyPayment } from "../lib/api";
+import { useCart } from "../contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../components/ToastProvider";
 
 export default function Checkout() {
-  const [cart, setCart] = useState({ items: [] });
+  const { cart } = useCart();
   const [profile, setProfile] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("razorpay");
+  const [selectedShipping, setSelectedShipping] = useState({
+    key: "standard",
+    label: "Standard (3-5 days)",
+    cost: 30,
+  });
+  const shippingOptions = [
+    { key: "standard", label: "Standard (3-5 days)", cost: 30 },
+    { key: "express", label: "Express (1-2 days)", cost: 80 },
+    { key: "free", label: "Free (7-10 days)", cost: 0 },
+  ];
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -21,9 +27,6 @@ export default function Checkout() {
     let mounted = true;
     (async () => {
       try {
-        const c = await getCart();
-        if (!mounted) return;
-        setCart(c.data || c);
         const p = await fetchProfile();
         if (!mounted) return;
         const prof = p.data || p;
@@ -52,7 +55,7 @@ export default function Checkout() {
 
   const handlePlaceOrder = async () => {
     if (!selectedAddress) return showToast("Select delivery address", "error");
-    const items = (cart.items || []).map((it) => ({
+    const items = (cart?.items || []).map((it) => ({
       productId: it.productId && (it.productId._id || it.productId),
       variantId:
         it.variantId ||
@@ -79,7 +82,8 @@ export default function Checkout() {
       name: selectedAddress.name || "",
       phone: selectedAddress.phone || "",
       label: selectedAddress.label || "",
-      cost: 0,
+      method: selectedShipping.key,
+      cost: selectedShipping.cost || 0,
     };
 
     try {
@@ -181,6 +185,21 @@ export default function Checkout() {
             <div>No saved addresses. Add one in your account.</div>
           )}
 
+          <h3 className="mt-6 font-medium mb-2">Shipping Method</h3>
+          <div className="space-y-2">
+            {shippingOptions.map((s) => (
+              <label key={s.key} className={`p-3 border rounded block`}>
+                <input
+                  type="radio"
+                  name="shipping"
+                  checked={selectedShipping.key === s.key}
+                  onChange={() => setSelectedShipping(s)}
+                />{" "}
+                {s.label} — {s.cost ? `₹${s.cost}` : "Free"}
+              </label>
+            ))}
+          </div>
+
           <h3 className="mt-6 font-medium mb-2">Payment Method</h3>
           <div className="space-y-2">
             <label className={`p-3 border rounded block`}>
@@ -201,13 +220,31 @@ export default function Checkout() {
               />{" "}
               Cash on Delivery
             </label>
+            <label className={`p-3 border rounded block`}>
+              <input
+                type="radio"
+                name="pm"
+                checked={paymentMethod === "upi"}
+                onChange={() => setPaymentMethod("upi")}
+              />{" "}
+              UPI (placeholder)
+            </label>
+            <label className={`p-3 border rounded block`}>
+              <input
+                type="radio"
+                name="pm"
+                checked={paymentMethod === "wallet"}
+                onChange={() => setPaymentMethod("wallet")}
+              />{" "}
+              Wallet (placeholder)
+            </label>
           </div>
         </div>
 
         <div>
           <h3 className="font-medium">Order Summary</h3>
           <div className="mt-2">
-            {(cart.items || []).map((it) => (
+            {(cart?.items || []).map((it) => (
               <div
                 key={it._id || it.productId}
                 className="flex justify-between py-2 border-b"
@@ -221,17 +258,53 @@ export default function Checkout() {
               </div>
             ))}
             <div className="mt-3">
-              <div className="flex justify-between font-semibold">
+              <div className="flex justify-between">
+                <div>Subtotal</div>
+                <div>
+                  ₹
+                  {(
+                    (cart?.items || []).reduce(
+                      (s, it) => s + (it.price || 0) * (it.qty || 1),
+                      0
+                    ) || 0
+                  ).toFixed(2)}
+                </div>
+              </div>
+              <div className="flex justify-between mt-2">
+                <div>Shipping</div>
+                <div>₹{(selectedShipping.cost || 0).toFixed(2)}</div>
+              </div>
+              {cart.coupon && cart.coupon.amount > 0 && (
+                <div className="flex justify-between mt-2 text-green-600">
+                  <div>Discount</div>
+                  <div>-₹{(cart.coupon.amount || 0).toFixed(2)}</div>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold mt-4">
                 <div>Total</div>
-                <div>₹{cart.total || cart.subtotal || 0}</div>
+                <div>
+                  ₹
+                  {(
+                    ((cart?.items || []).reduce(
+                      (s, it) => s + (it.price || 0) * (it.qty || 1),
+                      0
+                    ) || 0) +
+                    (selectedShipping.cost || 0) -
+                    (cart && cart.coupon && cart.coupon.amount
+                      ? cart.coupon.amount
+                      : 0)
+                  ).toFixed(2)}
+                </div>
               </div>
             </div>
             <div className="mt-4">
               <button
+                type="button"
                 className="bg-indigo-600 text-white px-4 py-2 rounded w-full"
                 onClick={handlePlaceOrder}
+                disabled={loading || !cart?.items?.length}
               >
-                Place Order
+                {loading ? "Processing..." : "Place Order"}
               </button>
             </div>
           </div>
