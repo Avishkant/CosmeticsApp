@@ -11,6 +11,7 @@ export default function Products() {
   const [page, setPage] = useState(1);
   const [limit] = useState(12);
   const [q, setQ] = useState("");
+  const [category, setCategory] = useState("");
   const [coupon, setCoupon] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -18,12 +19,13 @@ export default function Products() {
     const sp = Object.fromEntries([...searchParams]);
     setQ(sp.q || "");
     setPage(Number(sp.page) || 1);
+    setCategory(sp.category || "");
   }, [searchParams]);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetchProducts({ q, page, limit })
+    fetchProducts({ q, page, limit, category })
       .then((r) => {
         setProducts(r.data || []);
         setLoading(false);
@@ -45,7 +47,7 @@ export default function Products() {
     return () => {
       mounted = false;
     };
-  }, [q, page, limit]);
+  }, [q, page, limit, category]);
 
   function onSearch(e) {
     e.preventDefault();
@@ -55,7 +57,9 @@ export default function Products() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Products</h1>
+        <h1 className="text-2xl font-semibold">
+          {category ? `${category} — Products` : "Products"}
+        </h1>
         <form onSubmit={onSearch} className="flex items-center gap-2">
           <input
             value={q}

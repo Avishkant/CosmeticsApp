@@ -121,7 +121,7 @@ router.post(
       res.json({
         data: {
           created,
-          updated,
+          updated,   
           errors: errors.length,
           details: errors.slice(0, 10),
         },

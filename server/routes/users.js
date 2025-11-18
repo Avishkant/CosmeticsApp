@@ -108,4 +108,57 @@ router.get("/me/orders", requireAuth, async (req, res, next) => {
   }
 });
 
+// GET /api/users/me/wishlist - list product ids in wishlist (populate optional)
+router.get("/me/wishlist", requireAuth, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).populate({
+      path: "wishlist",
+      select: "title slug images price variants",
+    });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ data: user.wishlist || [] });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/users/me/wishlist - add productId to wishlist
+router.post("/me/wishlist", requireAuth, async (req, res, next) => {
+  try {
+    const { productId } = req.body;
+    if (!productId)
+      return res.status(400).json({ error: "productId required" });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    user.wishlist = user.wishlist || [];
+    if (!user.wishlist.find((id) => String(id) === String(productId))) {
+      user.wishlist.push(productId);
+      await user.save();
+    }
+    res.status(201).json({ data: user.wishlist });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/users/me/wishlist/:productId - remove product from wishlist
+router.delete(
+  "/me/wishlist/:productId",
+  requireAuth,
+  async (req, res, next) => {
+    try {
+      const pid = req.params.productId;
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      user.wishlist = (user.wishlist || []).filter(
+        (id) => String(id) !== String(pid)
+      );
+      await user.save();
+      res.json({ data: user.wishlist });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 export default router;

@@ -64,6 +64,7 @@ export const schemas = {
     productId: Joi.string().required(),
     variantId: Joi.string().optional(),
     qty: Joi.number().min(1).required(),
+    price: Joi.number().required(),
   }),
   checkout: Joi.object({
     cartId: Joi.string().optional(),

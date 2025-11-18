@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { fetchProductBySlug } from "../lib/api";
+import {
+  fetchProductBySlug,
+  fetchWishlist,
+  addToWishlist,
+  removeFromWishlist,
+} from "../lib/api";
 import { useParams } from "react-router-dom";
-import { addToCart } from "../lib/api";
+import { useCart } from "../contexts/CartContext";
 import { isAuthenticated } from "../lib/auth";
 import { useNavigate } from "react-router-dom";
 
@@ -9,14 +14,25 @@ export default function ProductDetail() {
   const { slug } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [wished, setWished] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     fetchProductBySlug(slug)
-      .then((r) => {
-        if (mounted) {
-          setProduct(r.data);
-          setLoading(false);
+      .then(async (r) => {
+        if (!mounted) return;
+        const prod = r.data;
+        setProduct(prod);
+        setLoading(false);
+        try {
+          const wl = await fetchWishlist();
+          const list = wl.data || wl || [];
+          const found = (list || []).some(
+            (p) => String(p._id) === String(prod._id) || p.slug === prod.slug
+          );
+          if (found) setWished(true);
+        } catch (e) {
+          // ignore
         }
       })
       .catch(() => setLoading(false));
@@ -36,18 +52,39 @@ export default function ProductDetail() {
   if (loading) return <div className="p-6">Loading...</div>;
   if (!product) return <div className="p-6">Product not found</div>;
 
+  const { addItem } = useCart();
+
   const handleAdd = async () => {
     if (!isAuthenticated()) return navigate("/login");
     const variant =
       selectedVariant || (product.variants && product.variants[0]) || {};
-    await addToCart({
-      productId: product._id,
-      variantId: variant.variantId || variant._id,
-      qty,
-      price: variant.price || 0,
-    });
-    setToast("Added to cart");
-    setTimeout(() => setToast(""), 2500);
+    try {
+      await addItem({
+        productId: product._id,
+        variantId: variant.variantId || variant._id,
+        qty,
+        price: variant.price || 0,
+      });
+      setToast("Added to cart");
+      setTimeout(() => setToast(""), 2500);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const toggleWish = async () => {
+    if (!isAuthenticated()) return navigate("/login");
+    try {
+      if (!wished) {
+        await addToWishlist(product._id);
+        setWished(true);
+      } else {
+        await removeFromWishlist(product._id);
+        setWished(false);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
@@ -117,12 +154,21 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 flex items-center gap-3">
             <button
+              type="button"
               className="bg-indigo-600 text-white px-4 py-2 rounded"
               onClick={handleAdd}
             >
               Add to cart
+            </button>
+            <button
+              className={`px-4 py-2 rounded border ${
+                wished ? "bg-red-100" : ""
+              }`}
+              onClick={toggleWish}
+            >
+              {wished ? "Remove from wishlist" : "Add to wishlist"}
             </button>
             {toast && (
               <div className="inline-block ml-4 text-sm text-green-600">

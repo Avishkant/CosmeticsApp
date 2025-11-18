@@ -26,6 +26,17 @@ export default function AdminBrands() {
 
   const save = async () => {
     try {
+      // simple client-side duplicate check (case-insensitive)
+      const name = (editing.name || "").trim();
+      if (!name) return showToast("Name is required", "error");
+      const dup = brands.find(
+        (b) =>
+          b.name &&
+          b.name.toLowerCase() === name.toLowerCase() &&
+          b._id !== editing._id
+      );
+      if (dup) return showToast("Brand already exists", "error");
+
       if (editing._id) {
         await api.put(`/brands/admin/brands/${editing._id}`, editing);
         showToast("Updated", "success");
@@ -37,7 +48,9 @@ export default function AdminBrands() {
       load();
     } catch (err) {
       console.error(err);
-      showToast("Save failed", "error");
+      // surface server message when available (e.g. 409 conflict)
+      const msg = err?.response?.data?.error || err?.message || "Save failed";
+      showToast(msg, "error");
     }
   };
 

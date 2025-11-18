@@ -1,8 +1,9 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { isAuthenticated, logout, saveUser, getUser } from "../lib/auth";
-import { getCart, default as api } from "../lib/api";
+import api from "../lib/api";
 import { useEffect, useState } from "react";
+import { useCart } from "../contexts/CartContext";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function Header() {
     await logout();
     navigate("/");
   };
+  const [searchQ, setSearchQ] = React.useState("");
   const [cartInfo, setCartInfo] = useState(null);
   const [userState, setUserState] = useState(getUser());
 
@@ -36,15 +38,17 @@ export default function Header() {
       setUserState(localUser);
     }
 
-    if (isAuthenticated()) {
-      getCart()
-        .then((r) => {
-          if (mounted) setCartInfo(r.data);
-        })
-        .catch(() => {});
-    }
+    // cart is provided by CartProvider; copy it to local derived state if present
+    // keep existing behaviour to update quickly after login
     return () => (mounted = false);
   }, []);
+
+  const { cart } = useCart();
+
+  // mirror cart into cartInfo for template compatibility
+  useEffect(() => {
+    if (cart) setCartInfo(cart);
+  }, [cart]);
 
   return (
     <header className="site-header">
@@ -60,8 +64,17 @@ export default function Header() {
         </div>
 
         <div className="header-center">
-          <form className="search-form" onSubmit={(e) => e.preventDefault()}>
+          <form
+            className="search-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const q = (searchQ || "").trim();
+              navigate(`/products?q=${encodeURIComponent(q)}&page=1`);
+            }}
+          >
             <input
+              value={searchQ}
+              onChange={(e) => setSearchQ(e.target.value)}
               className="search-input"
               placeholder="Search for a product or brand"
             />
@@ -103,6 +116,9 @@ export default function Header() {
             <Link to="/account" className="icon-link">
               👤
             </Link>
+            <Link to="/wishlist" className="icon-link" title="Wishlist">
+              ❤️
+            </Link>
             {(currentUser?.role || "user") !== "admin" && (
               <Link to="/cart" className="icon-link">
                 🛒
@@ -142,18 +158,41 @@ export default function Header() {
                 </Link>
               </>
             ) : (
-              // Public nav links
+              // Public nav links (navigate to products filtered by category)
               <>
-                <a>Brands</a>
-                <a>Holidays</a>
-                <a>Sale</a>
-                <a>Skin Care</a>
-                <a>Hair</a>
-                <a>Makeup</a>
-                <a>Bath &amp; Body</a>
-                <a>Fragrance</a>
-                <a>Self Care</a>
-                <a>Tools</a>
+                <Link to="/products?category=Brands" className="nav-link">
+                  Brands
+                </Link>
+                <Link to="/products?category=Holidays" className="nav-link">
+                  Holidays
+                </Link>
+                <Link to="/products?category=Sale" className="nav-link">
+                  Sale
+                </Link>
+                <Link to="/products?category=Skin%20Care" className="nav-link">
+                  Skin Care
+                </Link>
+                <Link to="/products?category=Hair" className="nav-link">
+                  Hair
+                </Link>
+                <Link to="/products?category=Makeup" className="nav-link">
+                  Makeup
+                </Link>
+                <Link
+                  to="/products?category=Bath%20%26%20Body"
+                  className="nav-link"
+                >
+                  Bath &amp; Body
+                </Link>
+                <Link to="/products?category=Fragrance" className="nav-link">
+                  Fragrance
+                </Link>
+                <Link to="/products?category=Self%20Care" className="nav-link">
+                  Self Care
+                </Link>
+                <Link to="/products?category=Tools" className="nav-link">
+                  Tools
+                </Link>
               </>
             )}
           </nav>

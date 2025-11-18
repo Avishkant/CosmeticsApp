@@ -17,6 +17,8 @@ import AdminCategories from "./pages/AdminCategories";
 import AdminUsers from "./pages/AdminUsers";
 import AdminCoupons from "./pages/AdminCoupons";
 import Account from "./pages/Account";
+import Wishlist from "./pages/Wishlist";
+import Checkout from "./pages/Checkout";
 import Header from "./components/Header";
 import "./App.css";
 import { ToastProvider } from "./components/ToastProvider";
@@ -30,8 +32,11 @@ function App() {
           <Header />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/products" element={<Products />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
+            <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/orders/:id" element={<OrderDetail />} />

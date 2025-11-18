@@ -1,48 +1,28 @@
 import React, { useEffect, useState } from "react";
 import {
-  getCart,
-  removeCartItem,
-  updateCartQuantity,
   createCheckout,
   verifyPayment,
   applyCartCoupon,
   removeCartCoupon,
 } from "../lib/api";
+import { useCart } from "../contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 
 export default function Cart() {
-  const [cart, setCart] = useState({ items: [], coupon: null });
-  const [loading, setLoading] = useState(true);
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await getCart();
-      setCart(res.data || { items: [] });
-    } catch {
-      setCart({ items: [] });
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
+  const { cart, loading, loadCart, removeItem, updateQty } = useCart();
 
   const handleRemove = async (itemId) => {
-    await removeCartItem(itemId);
-    await load();
+    await removeItem(itemId);
   };
 
   const handleQty = async (item, nextQty) => {
     if (nextQty < 1) return;
-    await updateCartQuantity({
+    await updateQty({
       productId: item.productId._id || item.productId,
       variantId: item.variantId,
       qty: nextQty,
       price: item.price,
     });
-    await load();
   };
 
   const [coupon, setCoupon] = useState("");
@@ -55,7 +35,8 @@ export default function Cart() {
     try {
       const res = await applyCartCoupon(coupon);
       // server returns updated cart with coupon info
-      setCart(res.data);
+      // refresh cart from server/context
+      await loadCart();
       const amount =
         res.data.coupon && res.data.coupon.amount ? res.data.coupon.amount : 0;
       setDiscount(amount);
@@ -225,7 +206,7 @@ export default function Cart() {
                 className="text-xs text-red-600"
                 onClick={async () => {
                   await removeCartCoupon();
-                  await load();
+                  await loadCart();
                   setDiscount(0);
                   setCoupon("");
                 }}

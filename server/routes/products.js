@@ -1,5 +1,6 @@
 import express from "express";
 import Product from "../models/Product.js";
+import Category from "../models/Category.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import AuditLog from "../models/AuditLog.js";
 import multer from "multer";
@@ -23,8 +24,79 @@ router.get("/", async (req, res, next) => {
     const limitNum = Math.max(1, Math.min(100, Number(limit) || 20));
 
     const filter = {};
-    if (category) filter.categories = category;
-    if (q) filter.$text = { $search: q };
+    if (category) {
+      // Accept category as id, slug, or name. Resolve to ObjectId when possible.
+      let catId = null;
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(String(category || ""));
+      if (isObjectId) {
+        catId = category;
+      } else {
+        // try to find by slug or name (case-insensitive for name)
+        const found = await Category.findOne({
+          $or: [
+            { slug: String(category).toLowerCase() },
+            { name: new RegExp(`^${String(category)}$`, "i") },
+          ],
+        }).lean();
+        if (found) catId = found._id;
+      }
+
+      // If we resolved to an ObjectId, filter by it. Otherwise, set an
+      // always-false $in query so we return no products instead of causing
+      // a CastError by passing a non-ObjectId into the categories field.
+      if (catId) {
+        filter.categories = catId;
+      } else {
+        filter.categories = { $in: [] };
+      }
+    }
+    if (q) {
+      // Use a safe case-insensitive regex search as a fallback to full-text search.
+      // This supports partial matches and works even if the text index is not present.
+      const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const clean = String(q || "").trim();
+      if (clean) {
+        const regex = new RegExp(escapeRegex(clean), "i");
+        // Start with common text fields
+        const ors = [
+          { title: regex },
+          { description: regex },
+          { brand: regex },
+          { tags: regex },
+        ];
+        // If `q` matches a brand name or slug, include products by `brandId` as well
+        try {
+          const Brand = (await import("../models/Brand.js")).default;
+          const foundBrand = await Brand.findOne({
+            $or: [
+              { name: new RegExp(`^${clean}$`, "i") },
+              { slug: clean.toLowerCase() },
+            ],
+          }).lean();
+          if (foundBrand) {
+            ors.push({ brandId: foundBrand._id });
+          }
+        } catch (e) {
+          // ignore brand resolution errors
+        }
+
+        // If `q` matches a category name or slug, include products in that category
+        try {
+          const foundCategory = await Category.findOne({
+            $or: [
+              { name: new RegExp(`^${clean}$`, "i") },
+              { slug: clean.toLowerCase() },
+            ],
+          }).lean();
+          if (foundCategory) {
+            ors.push({ categories: foundCategory._id });
+          }
+        } catch (e) {
+          // ignore category resolution errors
+        }
+        filter.$or = ors;
+      }
+    }
 
     const products = await Product.find(filter)
       .skip((pageNum - 1) * limitNum)

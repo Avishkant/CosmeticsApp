@@ -190,6 +190,21 @@ export async function fetchMyOrders() {
   return res.data;
 }
 
+export async function fetchWishlist() {
+  const res = await api.get(`/users/me/wishlist`);
+  return res.data;
+}
+
+export async function addToWishlist(productId) {
+  const res = await api.post(`/users/me/wishlist`, { productId });
+  return res.data;
+}
+
+export async function removeFromWishlist(productId) {
+  const res = await api.delete(`/users/me/wishlist/${productId}`);
+  return res.data;
+}
+
 export async function reconcileOrder(orderId) {
   const res = await api.post(`/admin/orders/reconcile/${orderId}`);
   return res.data;
