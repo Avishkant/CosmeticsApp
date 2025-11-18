@@ -45,7 +45,7 @@ router.post("/coupon", requireAuth, async (req, res, next) => {
     next(err);
   }
 });
-
+    
 // DELETE /api/cart/coupon - remove coupon
 router.delete("/coupon", requireAuth, async (req, res, next) => {
   try {

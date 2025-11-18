@@ -2,6 +2,8 @@ import express from "express";
 import Order from "../models/Order.js";
 import Cart from "../models/Cart.js";
 import Coupon from "../models/Coupon.js";
+import Product from "../models/Product.js";
+import mongoose from "mongoose";
 import AuditLog from "../models/AuditLog.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { validateBody, schemas } from "../middleware/validate.js";
@@ -19,7 +21,78 @@ router.post(
   validateBody(schemas.checkout),
   async (req, res, next) => {
     try {
-      const { items, shipping, couponCode, paymentMethod } = req.body;
+      const { items: rawItems, shipping, couponCode, paymentMethod } = req.body;
+
+      // helper to return a 400 with optional request body when debugging
+      const sendBadRequest = (message, extra = {}) => {
+        const payload = { error: message, ...extra };
+        if (process.env.DEBUG_CHECKOUT === "true")
+          payload.requestBody = req.body;
+        return res.status(400).json(payload);
+      };
+
+      // Ensure items is present and non-empty
+      if (!Array.isArray(rawItems) || rawItems.length === 0)
+        return sendBadRequest("items array required and must not be empty", {});
+
+      // Resolve authoritative prices for each item from product data
+      const items = [];
+      for (const it of rawItems) {
+        // support both string ids and populated product objects
+        let pid = it.productId;
+        if (pid && typeof pid === "object") {
+          pid = pid._id || pid.id || pid.toString();
+        }
+        // validate productId format
+        if (!pid || !mongoose.Types.ObjectId.isValid(pid))
+          return sendBadRequest("Invalid productId format in items", {
+            productId: it.productId,
+          });
+
+        // ensure product exists and resolve variant price
+        const product = await Product.findById(pid).lean();
+        if (!product)
+          return sendBadRequest("Product not found in items", {
+            productId: it.productId,
+          });
+
+        let variant = null;
+        if (it.variantId) {
+          // support variant as object or id
+          let vid = it.variantId;
+          if (vid && typeof vid === "object") {
+            vid = vid.variantId || vid._id || vid.id || vid.toString();
+          }
+          // if variantId provided, make sure it's present
+          variant = (product.variants || []).find(
+            (v) => String(v.variantId || v._id) === String(vid)
+          );
+          if (!variant) {
+            return sendBadRequest("Variant not found for product", {
+              productId: it.productId,
+              variantId: it.variantId,
+            });
+          }
+          // normalize variantId to variant.variantId when available
+          it.variantId = variant.variantId || variant._id || vid;
+        }
+        if (!variant) variant = (product.variants || [])[0] || null;
+
+        const price =
+          (it.price && Number(it.price)) ||
+          (variant && (variant.price || variant.mrp)) ||
+          0;
+        items.push({
+          productId: pid,
+          variantId:
+            it.variantId ||
+            (variant && (variant.variantId || variant._id)) ||
+            null,
+          qty: it.qty || 1,
+          price,
+        });
+      }
+
       // compute subtotal
       const subtotal = items.reduce((s, it) => s + it.price * it.qty, 0);
       let discounts = [];

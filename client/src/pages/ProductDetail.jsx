@@ -16,6 +16,8 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [wished, setWished] = useState(false);
 
+  const { addItem } = useCart();
+
   useEffect(() => {
     let mounted = true;
     fetchProductBySlug(slug)
@@ -51,8 +53,6 @@ export default function ProductDetail() {
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!product) return <div className="p-6">Product not found</div>;
-
-  const { addItem } = useCart();
 
   const handleAdd = async () => {
     if (!isAuthenticated()) return navigate("/login");
@@ -113,8 +113,9 @@ export default function ProductDetail() {
               <select
                 className="mt-2 border p-2 rounded w-full"
                 value={
-                  selectedVariant &&
-                  (selectedVariant.variantId || selectedVariant._id)
+                  selectedVariant
+                    ? selectedVariant.variantId || selectedVariant._id
+                    : ""
                 }
                 onChange={(e) => {
                   const v = product.variants.find(

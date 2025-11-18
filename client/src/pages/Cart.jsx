@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-  createCheckout,
-  verifyPayment,
   applyCartCoupon,
   removeCartCoupon,
   fetchProfile,
@@ -35,6 +33,7 @@ export default function Cart() {
 
   const [coupon, setCoupon] = useState("");
   const [processing, setProcessing] = useState(false);
+
   const navigate = useNavigate();
   const [discount, setDiscount] = useState(0);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -120,94 +119,6 @@ export default function Cart() {
       throw e;
     }
   };
-
-  const loadRazorpay = () =>
-    new Promise((resolve, reject) => {
-      if (window.Razorpay) return resolve(true);
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () =>
-        reject(new Error("Failed to load Razorpay script"));
-      document.body.appendChild(script);
-    });
-
-  const handleCheckout = async () => {
-    setProcessing(true);
-    try {
-      if (!selectedAddress) {
-        alert("Please select or add a delivery address before checkout");
-        setProcessing(false);
-        return;
-      }
-      const payload = {
-        items: (cart.items || []).map((i) => ({
-          productId: i.productId._id || i.productId,
-          variantId: i.variantId,
-          qty: i.qty,
-          price: i.price,
-        })),
-        shipping: {
-          address: selectedAddress.addressLine1 || "",
-          city: selectedAddress.city || "",
-          state: selectedAddress.state || "",
-          pincode: selectedAddress.pincode || "",
-          name: selectedAddress.name || "",
-          phone: selectedAddress.phone || "",
-          label: selectedAddress.label || "",
-          cost: 0,
-        },
-        couponCode: coupon || null,
-        paymentMethod: "razorpay",
-      };
-      const res = await createCheckout(payload);
-      const { order, razorpayOrder, razorpayKeyId } = res.data;
-      if (!razorpayOrder) {
-        // Non-razorpay flow (e.g., COD) - just navigate to order
-        navigate(`/orders/${order._id}`);
-        return;
-      }
-      await loadRazorpay();
-      const options = {
-        key: razorpayKeyId,
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
-        name: "CosmeticsApp",
-        description: `Order ${order._id}`,
-        order_id: razorpayOrder.id,
-        handler: async function (response) {
-          // verify with backend
-          try {
-            await verifyPayment({
-              orderId: order._id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-            });
-            navigate(`/orders/${order._id}`);
-          } catch (e) {
-            console.error("Verification failed", e);
-            alert(
-              "Payment verification failed. We will reconcile and notify you."
-            );
-          }
-        },
-        prefill: { name: "", email: "" },
-        theme: { color: "#4f46e5" },
-      };
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (e) {
-      console.error("Checkout error", e);
-      alert("Checkout failed");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  if (loading) return <div className="p-6">Loading cart...</div>;
-  if (!cart || !(cart.items && cart.items.length))
-    return <div className="p-6">Cart is empty</div>;
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -369,10 +280,14 @@ export default function Cart() {
           <div className="mt-4">
             <button
               disabled={processing}
-              onClick={handleCheckout}
+              onClick={() =>
+                navigate("/checkout", {
+                  state: { selectedAddressId: selectedAddress?._id },
+                })
+              }
               className="w-full bg-indigo-600 text-white px-4 py-2 rounded"
             >
-              {processing ? "Processing..." : "Checkout with Razorpay"}
+              {processing ? "Processing..." : "Proceed to Checkout"}
             </button>
           </div>
         </div>

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { fetchProfile, createCheckout, verifyPayment } from "../lib/api";
 import { useCart } from "../contexts/CartContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "../components/ToastProvider";
 
 export default function Checkout() {
   const { cart } = useCart();
+  const location = useLocation();
   const [profile, setProfile] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("razorpay");
@@ -32,7 +33,17 @@ export default function Checkout() {
         const prof = p.data || p;
         setProfile(prof);
         if (prof && prof.addresses && prof.addresses.length) {
-          setSelectedAddress(prof.addresses[0]);
+          // prefer address passed via navigation state
+          const stateAddrId = location?.state?.selectedAddressId;
+          if (stateAddrId) {
+            const found = prof.addresses.find(
+              (a) => String(a._id) === String(stateAddrId)
+            );
+            if (found) setSelectedAddress(found);
+            else setSelectedAddress(prof.addresses[0]);
+          } else {
+            setSelectedAddress(prof.addresses[0]);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -41,7 +52,7 @@ export default function Checkout() {
       }
     })();
     return () => (mounted = false);
-  }, []);
+  }, [location?.state?.selectedAddressId]);
 
   const loadRazorpayScript = () =>
     new Promise((resolve, reject) => {

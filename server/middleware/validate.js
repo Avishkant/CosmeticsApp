@@ -71,10 +71,15 @@ export const schemas = {
     items: Joi.array()
       .items(
         Joi.object({
-          productId: Joi.string().required(),
-          variantId: Joi.string().optional(),
+          productId: Joi.alternatives()
+            .try(Joi.string(), Joi.object())
+            .required(),
+          variantId: Joi.alternatives()
+            .try(Joi.string(), Joi.object())
+            .optional(),
           qty: Joi.number().min(1).required(),
-          price: Joi.number().required(),
+          // price may be provided by client, but server will resolve authoritative price
+          price: Joi.number().optional(),
         })
       )
       .required(),
