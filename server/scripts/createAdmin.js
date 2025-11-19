@@ -6,11 +6,14 @@ import User from "../models/User.js";
 // Load environment from the server folder .env (same as server/index.js)
 dotenv.config({ path: "./.env" });
 
-// Respect DATABASE_URL or MONGO_URI env vars, otherwise fall back to localhost
-const MONGO =
-  process.env.DATABASE_URL ||
-  process.env.MONGO_URI ||
-  "mongodb://localhost:27017/cosmetics";
+// Require DATABASE_URL or MONGO_URI from env — do not fall back to a hard-coded localhost DB URL.
+const MONGO = process.env.DATABASE_URL || process.env.MONGO_URI;
+if (!MONGO) {
+  console.error(
+    "MONGO_URI or DATABASE_URL must be set in server/.env for scripts. Aborting."
+  );
+  process.exit(1);
+}
 
 async function createAdmin(email, password, name = "Admin") {
   await mongoose.connect(MONGO);

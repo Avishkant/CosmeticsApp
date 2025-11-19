@@ -1,13 +1,17 @@
 import axios from "axios";
 
-// Prefer Vite-provided env var VITE_API_URL. Fall back to legacy VITE_BACKEND_URL or a sensible default.
+// Prefer Vite-provided env var VITE_API_URL. Fall back to legacy VITE_BACKEND_URL.
+// Do NOT hard-code a localhost fallback here; the deployment should provide the variable.
+if (!import.meta.env.VITE_API_URL && !import.meta.env.VITE_BACKEND_URL) {
+  console.error(
+    "Warning: VITE_API_URL (or VITE_BACKEND_URL) is not set. Set it in client/.env before deploying."
+  );
+}
 const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_BACKEND_URL ||
-  "http://localhost:5000";
+  import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
 
 export const api = axios.create({
-  baseURL: API_BASE + "/api",
+  baseURL: (API_BASE ? API_BASE : "") + "/api",
   headers: { "Content-Type": "application/json" },
 });
 

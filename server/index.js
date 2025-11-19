@@ -21,11 +21,14 @@ import { startReconcileJob } from "./jobs/reconcile.js";
 dotenv.config({ path: "./.env" });
 
 const PORT = process.env.PORT || 5000;
-// support both MONGO_URI (Atlas) and DATABASE_URL (local)
-const MONGO =
-  process.env.MONGO_URI ||
-  process.env.DATABASE_URL ||
-  "mongodb://localhost:27017/cosmetics";
+// Require MONGO_URI / DATABASE_URL from env — do not fall back to a hard-coded localhost DB URL.
+const MONGO = process.env.MONGO_URI || process.env.DATABASE_URL;
+if (!MONGO) {
+  console.error(
+    "MONGO_URI or DATABASE_URL must be set in server/.env. Aborting startup to avoid using hard-coded defaults."
+  );
+  process.exit(1);
+}
 
 const app = express();
 
@@ -76,9 +79,15 @@ async function start() {
   try {
     await mongoose.connect(MONGO);
     console.log("Connected to MongoDB");
-    app.listen(PORT, () =>
-      console.log(`Server listening on http://localhost:${PORT}`)
-    );
+    // Require BACKEND_URL in env so deployments control the public base URL.
+    const BACKEND_URL = process.env.BACKEND_URL;
+    if (!BACKEND_URL) {
+      console.error(
+        "BACKEND_URL must be set in server/.env (e.g. 'https://api.example.com'). Aborting startup."
+      );
+      process.exit(1);
+    }
+    app.listen(PORT, () => console.log(`Server listening on ${BACKEND_URL}`));
     // start background jobs
     try {
       startReconcileJob();

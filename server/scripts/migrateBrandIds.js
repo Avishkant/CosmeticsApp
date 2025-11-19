@@ -10,10 +10,12 @@ import Brand from "../models/Brand.js";
 
 dotenv.config({ path: "./.env" });
 
-const MONGO =
-  process.env.MONGO_URI ||
-  process.env.DATABASE_URL ||
-  "mongodb://localhost:27017/cosmetics";
+// Require MONGO connection string from env; do not fall back to a hard-coded localhost URL.
+const MONGO = process.env.MONGO_URI || process.env.DATABASE_URL;
+if (!MONGO) {
+  console.error("MONGO_URI or DATABASE_URL must be set in server/.env for scripts. Aborting.");
+  process.exit(1);
+}
 
 async function run() {
   await mongoose.connect(MONGO);
