@@ -20,6 +20,7 @@ import Account from "./pages/Account";
 import Wishlist from "./pages/Wishlist";
 import Checkout from "./pages/Checkout";
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 import "./App.css";
 import { ToastProvider } from "./components/ToastProvider";
 import { ConfirmProvider } from "./components/ConfirmProvider";
@@ -51,6 +52,7 @@ function App() {
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/account" element={<Account />} />
           </Routes>
+          <Footer />
         </BrowserRouter>
       </ConfirmProvider>
     </ToastProvider>

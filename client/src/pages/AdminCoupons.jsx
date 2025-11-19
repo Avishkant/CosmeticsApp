@@ -45,14 +45,38 @@ export default function AdminCoupons() {
   }
 
   const create = async () => {
+    // basic client-side validation to avoid server 400 responses
+    const code = (form.code || "").trim().toUpperCase();
+    if (!code) {
+      showToast("Coupon code is required", "error");
+      return;
+    }
+    const value = Number(form.value);
+    if (isNaN(value)) {
+      showToast("Coupon value must be a number", "error");
+      return;
+    }
+    if (form.type === "percentage") {
+      if (value < 0 || value > 100) {
+        showToast("Percentage value must be between 0 and 100", "error");
+        return;
+      }
+    } else {
+      if (value < 0) {
+        showToast("Flat amount must be >= 0", "error");
+        return;
+      }
+    }
+
     const ok = await confirm({
       title: "Create coupon",
-      message: `Create coupon ${form.code}?`,
+      message: `Create coupon ${code}?`,
     });
     if (!ok) return;
+
     try {
-      const payload = { ...form };
-      payload.code = (payload.code || "").toUpperCase();
+      const payload = { ...form, code };
+      payload.value = value;
       await api.post("/admin/coupons", payload);
       showToast("Coupon created", "success");
       setForm({
@@ -66,7 +90,10 @@ export default function AdminCoupons() {
       load();
     } catch (e) {
       console.error(e);
-      showToast("Create failed", "error");
+      // surface server validation messages when available
+      const msg = e?.response?.data?.error || e?.message || "Create failed";
+      if (Array.isArray(msg)) showToast(msg.join("; "), "error");
+      else showToast(msg, "error");
     }
   };
 

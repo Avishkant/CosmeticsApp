@@ -12,6 +12,12 @@
   --danger: #dc2626;
   --surface: #ffffff;
   --text: #0f1724; /* dark text for light background */
+  /* Price display tokens */
+  --price-color: #0f1724;
+  --mrp-color: #6b7280;
+  --discount-color: #16a34a;
+  --price-size: 1.25rem;
+  --price-weight: 800;
   --radius: 12px;
   --max-width: 1280px;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
@@ -139,33 +145,33 @@ a:hover {
   text-decoration: none;
   color: var(--text);
 }
-.brand .logo {
-  width: 64px;
-  height: 64px;
-  border-radius: 10px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 26px;
+.trending-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
 }
-.brand .brand-name {
-  font-weight: 800;
-  font-size: 22px;
+.trend-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  cursor: pointer;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.03);
 }
-.header-center {
-  flex: 1;
-  display: flex;
-  justify-content: center;
+.trend-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 420ms cubic-bezier(0.2,0.9,0.3,1), filter 420ms ease, box-shadow 420ms ease;
+  transform-origin: center center;
+  filter: saturate(1) brightness(1);
 }
-.search-form {
-  display: flex;
-  width: 480px;
-  max-width: 80%;
+.trend-card:hover .trend-img {
+  transform: scale(1.08);
+  filter: saturate(1.09) brightness(1.08);
+  box-shadow: 0 22px 48px rgba(2,6,23,0.14);
 }
-.search-input {
   flex: 1;
   padding: 10px 12px;
   border-radius: 6px 0 0 6px;
@@ -319,6 +325,20 @@ a:hover {
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
 }
+.price-current {
+  color: var(--price-color);
+  font-size: var(--price-size);
+  font-weight: var(--price-weight);
+}
+.price-mrp {
+  color: var(--mrp-color);
+  font-size: 0.9rem;
+}
+.price-discount {
+  color: var(--discount-color);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
 .badge-success {
   background: linear-gradient(
     90deg,
@@ -450,5 +470,104 @@ a:hover {
   .animate-fadeInUp,
   .float-slow {
     animation: none;
+  }
+}
+
+/* Footer gradient animation */
+.footer-anim {
+  position: relative;
+  overflow: hidden;
+}
+.footer-anim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0)
+  );
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+@keyframes panGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.footer-anim .app-container {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0)
+  );
+}
+.footer-anim {
+  animation: panGradient 14s ease-in-out infinite;
+  background-size: 300% 300%;
+}
+
+/* subtle focus for footer inputs */
+.footer-anim .input:focus {
+  box-shadow: 0 8px 30px rgba(124, 92, 255, 0.14);
+}
+
+/* hide small scrollbar but keep usable */
+.footer-anim ::-webkit-scrollbar {
+  height: 8px;
+}
+.footer-anim ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+/* Trending section */
+.trending-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.trend-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  cursor: pointer;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.01)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+.trend-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 420ms cubic-bezier(0.2, 0.9, 0.3, 1), filter 420ms ease,
+    box-shadow 420ms ease;
+  transform-origin: center center;
+  filter: saturate(1) brightness(1);
+}
+.trend-card:hover .trend-img {
+  transform: scale(1.06);
+  filter: saturate(1.08) brightness(1.06);
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.12);
+}
+
+@media (max-width: 900px) {
+  .trending-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .trending-grid {
+    grid-template-columns: 1fr;
   }
 }

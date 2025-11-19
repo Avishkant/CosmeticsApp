@@ -13,9 +13,10 @@ export default function ProductCard({ product, coupon }) {
   const img =
     (product.images && product.images[0] && product.images[0].url) ||
     "/vite.svg";
-  const price =
-    (product.variants && product.variants[0] && product.variants[0].price) ||
-    "";
+  const variant = (product.variants && product.variants[0]) || {};
+  const price = variant.price || 0;
+  const mrp = variant.mrp || price;
+  const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
   const [wished, setWished] = useState(false);
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -67,20 +68,9 @@ export default function ProductCard({ product, coupon }) {
   };
 
   return (
-    <div
-      className="card"
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        transition: "transform .18s",
-        borderRadius: 12,
-      }}
-    >
+    <div className="card relative overflow-hidden rounded-lg transition-transform duration-150">
       {coupon && (
-        <div
-          className="badge badge-accent"
-          style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}
-        >
+        <div className="absolute left-3 top-3 z-10 badge badge-accent">
           {coupon.code} - ₹{(coupon.amount || 0).toFixed(2)}
         </div>
       )}
@@ -88,55 +78,43 @@ export default function ProductCard({ product, coupon }) {
       <button
         type="button"
         onClick={toggleWish}
-        className="wishlist-btn"
-        style={{
-          position: "absolute",
-          right: 12,
-          top: 12,
-          zIndex: 11,
-          background: "transparent",
-          border: "none",
-          fontSize: 20,
-          cursor: "pointer",
-        }}
+        className="wishlist-btn absolute right-3 top-3 z-20 bg-transparent border-0 text-xl cursor-pointer"
         aria-label="Add to wishlist"
         title="Add to wishlist"
       >
         {wished ? "♥" : "♡"}
       </button>
 
-      <div
-        style={{
-          width: "100%",
-          height: 220,
-          overflow: "hidden",
-          borderRadius: 10,
-        }}
-      >
+      <div className="w-full h-56 overflow-hidden rounded-md">
         <img
           src={img}
           alt={product.title}
           className="w-full h-full object-cover img-zoom"
         />
       </div>
-      <div style={{ paddingTop: 12 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700 }}>{product.title}</h3>
-        <p style={{ fontSize: 13, color: "var(--muted)" }}>{product.brand}</p>
-        <div
-          className="mt-3"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ fontSize: 18, fontWeight: 800 }}>₹{price}</div>
+
+      <div className="pt-3 px-0">
+        <h3 className="text-base font-bold">{product.title}</h3>
+        <p className="text-sm text-gray-500">{product.brand}</p>
+        <div className="mt-3 flex items-center justify-between">
+          <div className="text-right">
+            <div>
+              <span className="price-current">₹{price}</span>
+              {mrp > price && (
+                <span className="ml-2 price-mrp">
+                  <s>₹{mrp}</s>
+                </span>
+              )}
+            </div>
+            {discount > 0 && (
+              <div className="price-discount mt-1">{discount}% off</div>
+            )}
+          </div>
           <div>
             <button
               type="button"
               onClick={handleAddToCart}
-              className="btn"
-              style={{ marginLeft: 8 }}
+              className="btn ml-2"
             >
               Add to cart
             </button>

@@ -103,6 +103,33 @@ export default function ProductDetail() {
         <div>
           <h1 className="text-2xl font-semibold">{product.title}</h1>
           <p className="text-sm text-gray-600">{product.brand}</p>
+          <div className="mt-3">
+            {(() => {
+              const variant =
+                selectedVariant ||
+                (product.variants && product.variants[0]) ||
+                {};
+              const price = variant.price || 0;
+              const mrp = variant.mrp || price;
+              const discount =
+                mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+              return (
+                <div className="mt-2">
+                  <div className="flex items-baseline gap-3">
+                    <div className="price-current">₹{price}</div>
+                    {mrp > price && (
+                      <div className="price-mrp">
+                        <s>₹{mrp}</s>
+                      </div>
+                    )}
+                    {discount > 0 && (
+                      <div className="price-discount">{discount}% off</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
           <div className="mt-4">
             <h3 className="font-medium">Description</h3>
             <p className="text-gray-700">{product.description}</p>

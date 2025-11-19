@@ -38,6 +38,7 @@ export default function Home() {
   // whether you placed images as heroSlider1.jpg or 1.jpg etc.
 
   const [slides, setSlides] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [idx, setIdx] = useState(0);
   const next = useCallback(
     () => setIdx((i) => (i + 1) % (slides.length || 1)),
@@ -91,6 +92,30 @@ export default function Home() {
         if (found) resolved.push(found);
       }
       if (mounted) setSlides(resolved);
+
+      // Build category images: prefer explicit names `shopByCategory1..6` inside src/assets/beautiq
+      try {
+        const chosen = [];
+        for (let i = 1; i <= 6; i += 1) {
+          const regex = new RegExp(`shopByCategory${i}\\.`, "i");
+          const key = assetKeys.find((k) => regex.test(k));
+          if (key) chosen.push(globAssets[key]);
+        }
+
+        // If explicit images not found, fall back to a best-effort selection
+        if (chosen.length === 0) {
+          const fallback = assetKeys
+            .filter((k) => !/heroSlider/i.test(k))
+            .filter((k) => !/gpay|facebook|coupon|label|logo/i.test(k))
+            .slice(0, 6)
+            .map((k) => globAssets[k]);
+          if (mounted) setCategories(fallback);
+        } else {
+          if (mounted) setCategories(chosen);
+        }
+      } catch (e) {
+        if (mounted) setCategories([]);
+      }
     })();
 
     const t = setInterval(next, 4000);
@@ -99,6 +124,27 @@ export default function Home() {
       clearInterval(t);
     };
   }, [next]);
+
+  // Load trending assets placed in src/assets/trending
+  const [trending, setTrending] = useState([]);
+  useEffect(() => {
+    let mounted = true;
+    try {
+      const imgs = import.meta.glob(
+        "/src/assets/trending/*.{webp,png,jpg,jpeg,svg}",
+        { eager: true, as: "url" }
+      );
+      const urls = Object.keys(imgs).map((k) => imgs[k]);
+      // keep original ordering by filename
+      urls.sort();
+      if (mounted) setTrending(urls);
+    } catch (e) {
+      if (mounted) setTrending([]);
+    }
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div>
@@ -194,7 +240,7 @@ export default function Home() {
               display: "flex",
               gap: 8,
             }}
-          >                                                                                                                                                    
+          >
             {slides.map((_, i) => (
               <button
                 key={i}
@@ -213,7 +259,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="app-container" style={{ marginTop: 18 }}>
+      {/* <div className="app-container" style={{ marginTop: 18 }}>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <Link to="/products" className="card hover-card" style={{ flex: 1 }}>
             <div style={{ fontWeight: 700 }}>Shop Now</div>
@@ -230,6 +276,85 @@ export default function Home() {
               `slide2.jpg`, `slide3.jpg` to populate the hero.
             </p>
           </div>
+        </div>
+      </div> */}
+
+      {/* Shop by Category section */}
+      <div className="app-container" style={{ marginTop: 64 }}>
+        <h2 className="text-center text-3xl md:text-4xl font-extrabold mb-16 md:mb-20">
+          Shop by Category
+        </h2>
+        <div className="flex justify-center gap-10 mt-12 md:mt-16 flex-nowrap">
+          {(categories.length ? categories : ["", "", "", "", "", ""]).map(
+            (src, i) => {
+              return (
+                <Link
+                  to="/products"
+                  key={i}
+                  className="w-40 md:w-48 text-center no-underline category-item flex-shrink-0"
+                >
+                  <div className="relative flex flex-col items-center">
+                    {/* larger image positioned to overlap the circle and extend below it */}
+                    {src ? (
+                      <img
+                        src={src}
+                        alt={`category-${i}`}
+                        className="w-40 h-40 md:w-48 md:h-48 object-cover -mt-4 md:-mt-5 relative z-10"
+                      />
+                    ) : (
+                      <div className="w-40 h-40 md:w-48 md:h-48 -mt-4 md:-mt-5" />
+                    )}
+                  </div>
+                  {/* Label text exists elsewhere; do not render custom labels here */}
+                </Link>
+              );
+            }
+          )}
+        </div>
+      </div>
+      {/* Trending tiles section */}
+      <div className="app-container" style={{ marginTop: 96 }}>
+        <h2 className="text-center text-3xl md:text-4xl font-extrabold mb-8">
+          Trending
+        </h2>
+        <div className="trending-grid">
+          {(trending.length ? trending : ["", "", "", "", "", ""])
+            .slice(0, 6)
+            .map((src, i) => (
+              <Link
+                to="/products"
+                key={i}
+                className="trend-card"
+                aria-label={`trending-${i}`}
+              >
+                {src ? (
+                  // Larger tiles: use a slightly taller aspect ratio and enforce a minHeight
+                  <div
+                    style={{
+                      width: "100%",
+                      aspectRatio: "4/3",
+                      minHeight: 260,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <img
+                      src={src}
+                      alt={`trending-${i}`}
+                      className="trend-img"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      aspectRatio: "4/3",
+                      minHeight: 260,
+                      background: "linear-gradient(180deg,#fff,#f3f4f6)",
+                    }}
+                  />
+                )}
+              </Link>
+            ))}
         </div>
       </div>
     </div>
