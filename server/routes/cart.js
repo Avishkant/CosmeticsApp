@@ -21,31 +21,85 @@ router.get("/", requireAuth, async (req, res, next) => {
 // POST /api/cart/coupon - apply a coupon to cart
 router.post("/coupon", requireAuth, async (req, res, next) => {
   try {
-    const { code } = req.body;
-    if (!code) return res.status(400).json({ error: "Code required" });
-    const coupon = await (
-      await import("../models/Coupon.js")
-    ).default.findOne({ code: code.toUpperCase(), active: true });
+    let { code } = req.body || {};
+    // Defensive: ensure code is a string before calling toUpperCase
+    if (code == null) return res.status(400).json({ error: "Code required" });
+    if (typeof code !== "string") {
+      try {
+        code = String(code);
+      } catch (e) {
+        return res.status(400).json({ error: "Invalid code" });
+      }
+    }
+    const codeStr = code.trim();
+    if (!codeStr) return res.status(400).json({ error: "Code required" });
+    const Coupon = (await import("../models/Coupon.js")).default;
+    const coupon = await Coupon.findOne({
+      code: codeStr.toUpperCase(),
+      active: true,
+    });
     if (!coupon) return res.status(404).json({ error: "Invalid code" });
-    const cart = await Cart.findOne({ userId: req.user.id });
-    if (!cart) return res.status(404).json({ error: "Cart not found" });
-    // compute subtotal
-    const subtotal = cart.items.reduce(
-      (s, i) => s + (i.price || 0) * (i.qty || 0),
-      0
-    );
-    const amount =
-      coupon.type === "percentage"
-        ? subtotal * (coupon.value / 100)
-        : coupon.value;
+
+    // fetch or create cart
+    let cart = await Cart.findOne({ userId: req.user.id });
+    if (!cart) {
+      // nothing in cart — return a clear error
+      return res.status(400).json({ error: "Cart is empty" });
+    }
+
+    // validate date windows
+    const now = new Date();
+    if (coupon.validFrom && now < new Date(coupon.validFrom))
+      return res.status(400).json({ error: "Coupon not yet valid" });
+    if (coupon.validUntil && now > new Date(coupon.validUntil))
+      return res.status(400).json({ error: "Coupon expired" });
+
+    // compute subtotal defensively
+    const subtotal = (cart.items || []).reduce((s, i) => {
+      const p = Number(i.price || 0);
+      const q = Number(i.qty || 0);
+      return s + (Number.isFinite(p) ? p : 0) * (Number.isFinite(q) ? q : 0);
+    }, 0);
+
+    let amount = 0;
+    if (coupon.type === "percentage") {
+      const pct = Number(coupon.value || 0);
+      amount = subtotal * (pct / 100);
+    } else {
+      amount = Math.min(Number(coupon.value || 0), subtotal);
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0)
+      return res.status(400).json({ error: "Coupon not applicable" });
+
+    // attach coupon to cart and save
     cart.coupon = { code: coupon.code, amount };
     await cart.save();
-    res.json({ data: cart });
+
+    // return populated cart and useful totals so client can display discount
+    const populated = await Cart.findById(cart._id)
+      .populate("items.productId")
+      .lean();
+    const roundedSubtotal = Math.round(subtotal * 100) / 100;
+    const roundedAmount = Math.round(amount * 100) / 100;
+    const totalAfter = Math.max(
+      0,
+      Math.round((roundedSubtotal - roundedAmount) * 100) / 100
+    );
+    res.json({
+      data: populated,
+      meta: {
+        subtotal: roundedSubtotal,
+        discount: roundedAmount,
+        total: totalAfter,
+      },
+    });
   } catch (err) {
+    console.error("Failed to apply coupon", err);
     next(err);
   }
 });
-    
+
 // DELETE /api/cart/coupon - remove coupon
 router.delete("/coupon", requireAuth, async (req, res, next) => {
   try {
@@ -78,7 +132,11 @@ router.post(
       else cart.items.push({ productId, variantId, qty, price });
       cart.updatedAt = new Date();
       await cart.save();
-      res.json({ data: cart });
+      // return populated cart so client has product details (images, title, etc.)
+      const populated = await Cart.findById(cart._id)
+        .populate("items.productId")
+        .lean();
+      res.json({ data: populated });
     } catch (err) {
       next(err);
     }
@@ -94,7 +152,10 @@ router.delete("/:itemId", requireAuth, async (req, res, next) => {
       (i) => i._id.toString() !== req.params.itemId
     );
     await cart.save();
-    res.json({ data: cart });
+    const populated = await Cart.findById(cart._id)
+      .populate("items.productId")
+      .lean();
+    res.json({ data: populated });
   } catch (err) {
     next(err);
   }

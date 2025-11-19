@@ -45,6 +45,10 @@ app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.use("/api/products", productsRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/cart", cartRouter);
+// register specific resource routers before the more generic orders router
+app.use("/api/admin/products", adminProductsRouter);
+app.use("/api/brands", brandsRouter);
+app.use("/api/categories", categoriesRouter);
 // Mount ordersRouter at /api so routes like /admin/orders and /checkout match
 app.use("/api", ordersRouter);
 // couponsRouter contains both admin routes (e.g. /admin/coupons)
@@ -60,9 +64,12 @@ app.use("/api/users", usersRouter);
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(err);
-  res
-    .status(err.status || 500)
-    .json({ error: err.message || "Internal Server Error" });
+  const payload = { error: err.message || "Internal Server Error" };
+  // In development include the stack for easier debugging in browser/network tab
+  if (process.env.NODE_ENV !== "production" && err && err.stack) {
+    payload.stack = err.stack;
+  }
+  res.status(err.status || 500).json(payload);
 });
 
 async function start() {

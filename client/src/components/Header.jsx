@@ -160,7 +160,7 @@ export default function Header() {
             ) : (
               // Public nav links (navigate to products filtered by category)
               <>
-                <Link to="/products?category=Brands" className="nav-link">
+                <Link to="/brands" className="nav-link">
                   Brands
                 </Link>
                 <Link to="/products?category=Holidays" className="nav-link">
@@ -177,6 +177,9 @@ export default function Header() {
                 </Link>
                 <Link to="/products?category=Makeup" className="nav-link">
                   Makeup
+                </Link>
+                <Link to="/lip-care" className="nav-link">
+                  Lip Care
                 </Link>
                 <Link
                   to="/products?category=Bath%20%26%20Body"

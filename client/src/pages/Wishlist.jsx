@@ -15,7 +15,9 @@ export default function Wishlist() {
     setLoading(true);
     try {
       const res = await api.get("/users/me/wishlist");
-      setItems(res.data || res.data === undefined ? res.data : res);
+      // axios responses are typically { data: <payload> }, and our server
+      // returns { data: [...] } so normalize to the inner data array.
+      setItems(res.data?.data || res.data || []);
     } catch (e) {
       console.error(e);
       showToast("Failed to load wishlist", "error");
@@ -43,14 +45,53 @@ export default function Wishlist() {
   const handleMoveToCart = async (p) => {
     try {
       // basic: add first variant or product with qty 1
-      const variantId =
+      const productId = p._id || p;
+      let variantId =
         (p.variants && p.variants[0] && p.variants[0].variantId) || null;
-      await addItem({
-        productId: p._id || p,
-        variantId,
-        qty: 1,
-        price: p.price || (p.variants && p.variants[0] && p.variants[0].price),
-      });
+      let price =
+        p.price || (p.variants && p.variants[0] && p.variants[0].price) || null;
+
+      // If price is missing (wishlist item may be just an id), fetch product to resolve price
+      if (!price) {
+        try {
+          const r = await api.get(`/products/${productId}`);
+          const prod = r.data?.data || r.data;
+          if (prod) {
+            price =
+              prod.price ||
+              (prod.variants && prod.variants[0] && prod.variants[0].price) ||
+              price;
+            variantId =
+              variantId ||
+              (prod.variants &&
+                prod.variants[0] &&
+                prod.variants[0].variantId) ||
+              variantId;
+          }
+        } catch (e) {
+          console.warn("Failed to fetch product for price resolution", e);
+        }
+      }
+
+      if (!price && price !== 0)
+        throw new Error("Cannot determine price for product");
+
+      // ensure numeric price
+      price = Number(price);
+      if (Number.isNaN(price)) throw new Error("Price is not a number");
+
+      // coerce IDs to strings to satisfy server validation
+      const pid = productId ? String(productId) : productId;
+      const vid = variantId != null ? String(variantId) : undefined;
+
+      const payload = { productId: pid, variantId: vid, qty: 1, price };
+      console.debug("Adding to cart payload:", payload);
+      try {
+        await addItem(payload);
+      } catch (err) {
+        console.error("addItem failed:", err?.response?.data || err);
+        throw err;
+      }
       showToast("Added to cart", "success");
       // Optionally remove from wishlist
       await api.delete(`/users/me/wishlist/${p._id || p}`);
@@ -60,7 +101,10 @@ export default function Wishlist() {
       navigate("/cart");
     } catch (e) {
       console.error(e);
-      showToast("Failed to move to cart", "error");
+      // prefer server-provided message when available
+      const msg =
+        e?.response?.data?.error || e?.message || "Failed to move to cart";
+      showToast(msg, "error");
     }
   };
 

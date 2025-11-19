@@ -51,3 +51,138 @@
     align-items: stretch;
   }
 }
+
+/* Lipstick pop animation */
+.lipstick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.lipstick-outer {
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+  perspective: 800px;
+}
+
+.lipstick-inner {
+  width: 100%;
+  transform-origin: 50% 100%;
+  /* start slightly down so the base of the lipstick sits into the hero */
+  transform: translateY(22px);
+  transition: transform 360ms cubic-bezier(0.2, 0.9, 0.2, 1), box-shadow 220ms;
+}
+.lipstick-card:hover .lipstick-inner,
+.lipstick-card:focus-within .lipstick-inner,
+.lipstick-card.group:hover .lipstick-inner {
+  /* pop straight up (no rotation) */
+  transform: translateY(-18px) scale(1.04);
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.16);
+}
+
+/* LipCare-specific hero styles (scoped) */
+.lipcare-hero {
+  background: linear-gradient(180deg, #f6d86b 0%, #f3c84a 100%);
+  /* make hero take most of the viewport so background reaches bottom side */
+  min-height: 78vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-bottom: 6rem; /* give space for bottom-border lipsticks */
+}
+
+/* hero shades overlay container */
+.lipcare-hero .hero-shades {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 58px;
+  pointer-events: none; /* let individual cards handle hover */
+}
+.lipcare-hero .hero-shades .shades-row {
+  pointer-events: auto;
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+/* smaller size for hero variants */
+.lipcare-hero .hero-shades .lipstick-outer {
+  width: 140px;
+  height: 140px;
+}
+.lipcare-hero .hero-shades .lipstick-inner img {
+  width: 120px;
+  height: 120px;
+}
+
+/* bottom border lipsticks */
+.lipcare-hero .hero-bottom-border {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px; /* nudge slightly above the absolute page bottom */
+  pointer-events: none; /* let individual images handle hover */
+}
+.lipcare-hero .hero-bottom-border .border-lips {
+  pointer-events: auto;
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  align-items: flex-end;
+  transform: translateY(50%); /* push half outside so they sit on the border */
+}
+.border-lip-wrap {
+  width: 98px;
+  height: 50px; /* show only the top half of the image by default */
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end; /* align image so its base sits at the bottom */
+}
+.border-lip {
+  width: 98px;
+  height: 98px;
+  object-fit: contain;
+  /* start pushed down so only top part shows */
+  transform: translateY(40px);
+  will-change: transform;
+  transform-origin: 50% 100%;
+  cursor: pointer;
+}
+.border-lip-wrap:hover .border-lip {
+  /* animate with a pop/bounce so lipstick feels like coming out */
+  animation: lipPop 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.18));
+  z-index: 30;
+}
+
+@keyframes lipPop {
+  0% {
+    transform: translateY(40px) scale(1);
+  }
+  60% {
+    transform: translateY(-12px) scale(1.06);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* small-screen adjustments: place border lipsticks below hero instead */
+@media (max-width: 640px) {
+  .hero-bottom-border .border-lips {
+    transform: translateY(0);
+    padding-top: 16px;
+  }
+  .border-lip {
+    width: 72px;
+    height: 72px;
+  }
+  .border-lip-wrap {
+    height: 36px;
+  }
+}

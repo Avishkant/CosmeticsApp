@@ -98,12 +98,21 @@ export default function Cart() {
   const handleApplyCoupon = async () => {
     try {
       setProcessing(true);
-      await apiApplyCartCoupon({ code: coupon });
+      // apiApplyCartCoupon expects a string code; call it defensively
+      const resp = await apiApplyCartCoupon(coupon);
+      // if server returned meta totals, update UI from fresh cart
       await loadCart();
       setCoupon("");
       showToast("Coupon applied");
+      // if response includes meta we could use it to show totals (optional)
+      return resp;
     } catch (err) {
-      showToast(err?.response?.data?.message || "Failed to apply coupon");
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to apply coupon";
+      showToast(msg);
     } finally {
       setProcessing(false);
     }

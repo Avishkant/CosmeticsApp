@@ -146,7 +146,13 @@ export async function validateCoupon(code, subtotal) {
 }
 
 export async function applyCartCoupon(code) {
-  const res = await api.post("/cart/coupon", { code });
+  const payload =
+    typeof code === "string"
+      ? { code }
+      : code && typeof code === "object"
+      ? code
+      : { code: String(code) };
+  const res = await api.post("/cart/coupon", payload);
   return res.data;
 }
 

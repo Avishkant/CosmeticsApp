@@ -13,6 +13,8 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminProducts from "./pages/AdminProducts";
 import AdminHome from "./pages/AdminHome";
 import AdminBrands from "./pages/AdminBrands";
+import Brands from "./pages/Brands";
+import LipCare from "./pages/LipCare";
 import AdminCategories from "./pages/AdminCategories";
 import AdminUsers from "./pages/AdminUsers";
 import AdminCoupons from "./pages/AdminCoupons";
@@ -34,6 +36,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/brands" element={<Brands />} />
+            <Route path="/lip-care" element={<LipCare />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/cart" element={<Cart />} />
