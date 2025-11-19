@@ -509,7 +509,10 @@ router.get(
 // GET /api/orders - list user orders
 router.get("/", requireAuth, async (req, res, next) => {
   try {
-    const orders = await Order.find({ userId: req.user.id }).lean();
+    // populate product basic details for items so frontend can show title/images
+    const orders = await Order.find({ userId: req.user.id })
+      .populate({ path: "items.productId", select: "title slug images price" })
+      .lean();
     res.json({ data: orders });
   } catch (err) {
     next(err);
@@ -570,7 +573,9 @@ router.get(
 // GET /api/orders/:id - get single order (user or admin)
 router.get("/:id", requireAuth, async (req, res, next) => {
   try {
-    const order = await Order.findById(req.params.id).lean();
+    const order = await Order.findById(req.params.id)
+      .populate({ path: "items.productId", select: "title slug images price" })
+      .lean();
     if (!order) return res.status(404).json({ error: "Not found" });
     // allow owner or admin
     if (order.userId.toString() !== req.user.id && req.user.role !== "admin")

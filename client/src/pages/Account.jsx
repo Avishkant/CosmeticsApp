@@ -230,18 +230,20 @@ export default function Account() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => openEditAddress(a)}
-                    className="px-3 py-1 border rounded"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteAddress(a)}
-                    className="px-3 py-1 border rounded text-red-600"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openEditAddress(a)}
+                      className="px-3 py-1 border rounded"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteAddress(a)}
+                      className="px-3 py-1 border rounded text-red-600"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}
@@ -265,37 +267,68 @@ export default function Account() {
           <h3 className="font-medium mb-3">Order History</h3>
           {orders.length === 0 && <div>No orders yet</div>}
           <ul className="space-y-3">
-            {orders.map((o) => (
-              <li
-                key={o._id}
-                className="p-3 border rounded flex justify-between items-center"
-              >
-                <div>
-                  <div className="font-semibold">Order {o._id}</div>
-                  <div className="text-sm">
-                    {new Date(o.createdAt).toLocaleString()}
-                  </div>
-                  <div className="text-sm">Status: {o.status}</div>
-                  {o.shipping && (
-                    <div className="text-sm mt-1">
-                      Courier: {o.shipping.courier || "-"} • AWB:{" "}
-                      {o.shipping.awb || "-"}
+            {orders.map((o) => {
+              const first = o.items && o.items.length > 0 ? o.items[0] : null;
+              const prod =
+                first && first.productId && typeof first.productId === "object"
+                  ? first.productId
+                  : null;
+              const title =
+                (prod && (prod.title || prod.name)) ||
+                (first && typeof first.productId === "string"
+                  ? first.productId
+                  : null);
+              const img =
+                prod && prod.images && prod.images[0] && prod.images[0].url;
+              return (
+                <li
+                  key={o._id}
+                  className="p-3 border rounded flex justify-between items-center"
+                >
+                  <div className="flex items-center gap-3">
+                    {first && (
+                      <div className="w-14 h-14 rounded overflow-hidden bg-gray-100 flex-shrink-0">
+                        <img
+                          src={img || "/vite.svg"}
+                          alt={title || "Product"}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-semibold">Order {o._id}</div>
+                      <div className="text-sm">
+                        {new Date(o.createdAt).toLocaleString()}
+                      </div>
+                      <div className="text-sm">Status: {o.status}</div>
+                      {o.items && o.items.length > 0 && (
+                        <div className="text-sm mt-1 text-gray-600">
+                          {o.items.length} item{o.items.length > 1 ? "s" : ""}
+                          {title ? ` • ${title}` : ""}
+                        </div>
+                      )}
+                      {o.shipping && (
+                        <div className="text-sm mt-1">
+                          Courier: {o.shipping.courier || "-"} • AWB:{" "}
+                          {o.shipping.awb || "-"}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <a className="btn btn-ghost" href={`/orders/${o._id}`}>
-                    View
-                  </a>
-                  <button
-                    onClick={() => setTrackingOrderId(o._id)}
-                    className="px-3 py-1 border rounded"
-                  >
-                    Track
-                  </button>
-                </div>
-              </li>
-            ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a className="btn btn-ghost" href={`/orders/${o._id}`}>
+                      View
+                    </a>
+                    <button
+                      onClick={() => setTrackingOrderId(o._id)}
+                      className="px-3 py-1 border rounded"
+                    >
+                      Track
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
 
           {/* Tracking panel */}
@@ -336,14 +369,39 @@ export default function Account() {
                 <div className="mt-3">
                   <h4 className="font-medium">Items</h4>
                   <ul className="mt-2 space-y-1">
-                    {trackingData.items.map((it) => (
-                      <li key={it._id || it.productId} className="text-sm">
-                        {(it.productId &&
-                          (it.productId.title || it.productId)) ||
-                          "Product"}{" "}
-                        x {it.qty}
-                      </li>
-                    ))}
+                    {trackingData.items.map((it) => {
+                      const prod =
+                        it.productId && typeof it.productId === "object"
+                          ? it.productId
+                          : null;
+                      const title =
+                        (prod && (prod.title || prod.name)) ||
+                        (typeof it.productId === "string"
+                          ? it.productId
+                          : "Product");
+                      const img =
+                        prod &&
+                        prod.images &&
+                        prod.images[0] &&
+                        prod.images[0].url;
+                      return (
+                        <li
+                          key={it._id || it.productId}
+                          className="flex items-center gap-2"
+                        >
+                          <div className="w-10 h-10 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                            <img
+                              src={img || "/vite.svg"}
+                              alt={title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="text-sm">
+                            {title} x {it.qty}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}

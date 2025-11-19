@@ -99,8 +99,10 @@ router.delete("/me/addresses/:id", requireAuth, async (req, res, next) => {
 // GET /api/users/me/orders - list user's orders
 router.get("/me/orders", requireAuth, async (req, res, next) => {
   try {
+    // populate product details for items so frontend can show title/images
     const orders = await Order.find({ userId: req.user.id })
       .sort({ createdAt: -1 })
+      .populate({ path: "items.productId", select: "title slug images price" })
       .lean();
     res.json({ data: orders });
   } catch (err) {
