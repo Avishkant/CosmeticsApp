@@ -15,7 +15,7 @@ export default function AdminPayments() {
     if (!oid) return;
     try {
       const res = await reconcileOrder(oid);
-      setResult(res.data);
+      setResult(res);
       showToast("Reconciliation finished", "success");
       await loadOrders();
     } catch (e) {
@@ -27,7 +27,7 @@ export default function AdminPayments() {
   const loadLogs = async () => {
     try {
       const res = await fetchAuditLogs();
-      setLogs(res.data || []);
+      setLogs(res || []);
     } catch (e) {
       console.error(e);
       showToast("Failed to load logs", "error");
@@ -37,7 +37,8 @@ export default function AdminPayments() {
   const loadOrders = React.useCallback(async () => {
     try {
       const res = await api.get("/admin/orders");
-      setOrders(res.data || []);
+      // server returns { data: [...], meta: {...} }
+      setOrders(res.data?.data || []);
     } catch (e) {
       console.error(e);
       showToast("Failed to load orders", "error");

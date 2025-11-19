@@ -118,13 +118,13 @@ export async function updateCartQuantity(payload) {
 
 export async function createCheckout(payload) {
   // payload: { items, shipping, couponCode, paymentMethod }
-  const res = await api.post("/orders/checkout", payload);
+  const res = await api.post("/checkout", payload);
   return res.data;
 }
 
 export async function verifyPayment(payload) {
   // payload: { orderId, razorpay_payment_id, razorpay_order_id, razorpay_signature }
-  const res = await api.post("/orders/verify", payload);
+  const res = await api.post("/verify", payload);
   return res.data;
 }
 
@@ -156,7 +156,7 @@ export async function removeCartCoupon() {
 }
 
 export async function fetchOrder(id) {
-  const res = await api.get(`/orders/${id}`);
+  const res = await api.get(`/${id}`);
   return res.data;
 }
 

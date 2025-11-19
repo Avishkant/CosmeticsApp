@@ -45,7 +45,8 @@ app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.use("/api/products", productsRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/cart", cartRouter);
-app.use("/api/orders", ordersRouter);
+// Mount ordersRouter at /api so routes like /admin/orders and /checkout match
+app.use("/api", ordersRouter);
 // couponsRouter contains both admin routes (e.g. /admin/coupons)
 // and a public validate route (/coupons/validate). Mount it at /api
 // so the routes become /api/admin/coupons and /api/coupons/validate.

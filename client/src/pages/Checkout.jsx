@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { fetchProfile, createCheckout, verifyPayment } from "../lib/api";
+import {
+  fetchProfile,
+  createCheckout,
+  verifyPayment,
+  addAddress,
+  updateAddress,
+} from "../lib/api";
 import { useCart } from "../contexts/CartContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "../components/ToastProvider";
+import AddressModal from "../components/AddressModal";
 
 export default function Checkout() {
   const { cart } = useCart();
@@ -53,6 +60,9 @@ export default function Checkout() {
     })();
     return () => (mounted = false);
   }, [location?.state?.selectedAddressId]);
+
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
 
   const loadRazorpayScript = () =>
     new Promise((resolve, reject) => {
@@ -169,31 +179,72 @@ export default function Checkout() {
           {profile && profile.addresses && profile.addresses.length ? (
             <div className="space-y-2">
               {profile.addresses.map((a) => (
-                <label
+                <div
                   key={a._id}
-                  className={`p-3 border rounded block ${
+                  className={`p-3 border rounded flex items-start justify-between ${
                     selectedAddress &&
                     String(selectedAddress._id) === String(a._id)
                       ? "bg-indigo-50"
                       : ""
                   }`}
                 >
-                  <input
-                    type="radio"
-                    name="addr"
-                    checked={
-                      selectedAddress &&
-                      String(selectedAddress._id) === String(a._id)
-                    }
-                    onChange={() => setSelectedAddress(a)}
-                  />{" "}
-                  <strong>{a.label}</strong> — {a.addressLine1}, {a.city}{" "}
-                  {a.pincode}
-                </label>
+                  <label className="flex-1">
+                    <input
+                      type="radio"
+                      name="addr"
+                      checked={
+                        selectedAddress &&
+                        String(selectedAddress._id) === String(a._id)
+                      }
+                      onChange={() => setSelectedAddress(a)}
+                    />{" "}
+                    <strong>{a.label}</strong> — {a.addressLine1}, {a.city}{" "}
+                    {a.pincode}
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="text-sm px-2 py-1 border rounded"
+                      onClick={() => {
+                        setEditingAddress(a);
+                        setShowAddressModal(true);
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </div>
               ))}
+
+              <div>
+                <button
+                  type="button"
+                  className="mt-3 px-3 py-2 bg-indigo-600 text-white rounded"
+                  onClick={() => {
+                    setEditingAddress(null);
+                    setShowAddressModal(true);
+                  }}
+                >
+                  Add new address
+                </button>
+              </div>
             </div>
           ) : (
-            <div>No saved addresses. Add one in your account.</div>
+            <div className="space-y-3">
+              <div>No saved addresses.</div>
+              <div>
+                <button
+                  type="button"
+                  className="px-3 py-2 bg-indigo-600 text-white rounded"
+                  onClick={() => {
+                    setEditingAddress(null);
+                    setShowAddressModal(true);
+                  }}
+                >
+                  Add Address
+                </button>
+              </div>
+            </div>
           )}
 
           <h3 className="mt-6 font-medium mb-2">Shipping Method</h3>
@@ -321,6 +372,38 @@ export default function Checkout() {
           </div>
         </div>
       </div>
+      {showAddressModal && (
+        <AddressModal
+          address={editingAddress}
+          onSave={async (addr) => {
+            try {
+              if (editingAddress && editingAddress._id) {
+                await updateAddress(editingAddress._id, addr);
+              } else {
+                await addAddress(addr);
+              }
+              const p = await fetchProfile();
+              setProfile(p.data || p);
+              if (p?.data?.addresses && p.data.addresses.length) {
+                setSelectedAddress(p.data.addresses[0]);
+              }
+              setShowAddressModal(false);
+              setEditingAddress(null);
+            } catch (err) {
+              console.error(err);
+              showToast(
+                err?.response?.data?.message || "Failed to save address",
+                "error"
+              );
+              throw err;
+            }
+          }}
+          onCancel={() => {
+            setShowAddressModal(false);
+            setEditingAddress(null);
+          }}
+        />
+      )}
     </div>
   );
 }
