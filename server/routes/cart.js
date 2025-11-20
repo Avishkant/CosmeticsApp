@@ -22,6 +22,12 @@ router.get("/", requireAuth, async (req, res, next) => {
 router.post("/coupon", requireAuth, async (req, res, next) => {
   try {
     let { code } = req.body || {};
+    console.log(
+      "[cart.coupon] apply request by user:",
+      req.user && req.user.id,
+      "code:",
+      code
+    );
     // Defensive: ensure code is a string before calling toUpperCase
     if (code == null) return res.status(400).json({ error: "Code required" });
     if (typeof code !== "string") {
@@ -38,6 +44,11 @@ router.post("/coupon", requireAuth, async (req, res, next) => {
       code: codeStr.toUpperCase(),
       active: true,
     });
+    console.log(
+      "[cart.coupon] coupon lookup result:",
+      !!coupon,
+      coupon && coupon.code
+    );
     if (!coupon) return res.status(404).json({ error: "Invalid code" });
 
     // fetch or create cart
@@ -60,14 +71,23 @@ router.post("/coupon", requireAuth, async (req, res, next) => {
       const q = Number(i.qty || 0);
       return s + (Number.isFinite(p) ? p : 0) * (Number.isFinite(q) ? q : 0);
     }, 0);
+    console.log("[cart.coupon] computed subtotal:", subtotal);
 
     let amount = 0;
+    // Defensive coercions
+    const cValue = Number(coupon.value || 0);
+    if (!Number.isFinite(cValue)) {
+      console.error("[cart.coupon] invalid coupon value", coupon.value);
+      return res.status(400).json({ error: "Coupon configuration invalid" });
+    }
     if (coupon.type === "percentage") {
-      const pct = Number(coupon.value || 0);
+      const pct = cValue;
       amount = subtotal * (pct / 100);
     } else {
-      amount = Math.min(Number(coupon.value || 0), subtotal);
+      amount = Math.min(cValue, subtotal);
     }
+
+    console.log("[cart.coupon] calculated amount:", amount);
 
     if (!Number.isFinite(amount) || amount <= 0)
       return res.status(400).json({ error: "Coupon not applicable" });
@@ -75,6 +95,7 @@ router.post("/coupon", requireAuth, async (req, res, next) => {
     // attach coupon to cart and save
     cart.coupon = { code: coupon.code, amount };
     await cart.save();
+    console.log("[cart.coupon] coupon attached to cart", cart._id.toString());
 
     // return populated cart and useful totals so client can display discount
     const populated = await Cart.findById(cart._id)
