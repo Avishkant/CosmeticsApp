@@ -15,6 +15,10 @@ import AdminHome from "./pages/AdminHome";
 import AdminBrands from "./pages/AdminBrands";
 import Brands from "./pages/Brands";
 import LipCare from "./pages/LipCare";
+import SkinCare from "./pages/SkinCare";
+import Hair from "./pages/Hair";
+import Makeup from "./pages/MakeupPage";
+import Fragrance from "./pages/Fragrance";
 import AdminCategories from "./pages/AdminCategories";
 import AdminUsers from "./pages/AdminUsers";
 import AdminCoupons from "./pages/AdminCoupons";
@@ -37,6 +41,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
             <Route path="/brands" element={<Brands />} />
+            <Route path="/skin-care" element={<SkinCare />} />
+            <Route path="/hair" element={<Hair />} />
+            <Route path="/makeup" element={<Makeup />} />
+            <Route path="/fragrance" element={<Fragrance />} />
             <Route path="/lip-care" element={<LipCare />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
             <Route path="/wishlist" element={<Wishlist />} />

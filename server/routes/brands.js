@@ -1,6 +1,7 @@
 import express from "express";
 import Brand from "../models/Brand.js";
 import AuditLog from "../models/AuditLog.js";
+import mongoose from "mongoose";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import multer from "multer";
 import cloudinary from "../services/cloudinary.js";
@@ -14,6 +15,14 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 // GET /api/brands
 router.get("/", async (req, res, next) => {
   try {
+    // If MongoDB isn't connected, fail fast with a clear message instead of hanging
+    if (mongoose.connection && mongoose.connection.readyState !== 1) {
+      console.error(
+        "[brands] MongoDB not connected, readyState=",
+        mongoose.connection.readyState
+      );
+      return res.status(503).json({ error: "Database unavailable" });
+    }
     const list = await Brand.find({}).sort({ name: 1 }).lean();
     // if logo is missing but we have a Cloudinary public id, construct a CDN URL
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
@@ -38,6 +47,13 @@ router.get("/", async (req, res, next) => {
 // GET /api/brands/:id
 router.get("/:id", async (req, res, next) => {
   try {
+    if (mongoose.connection && mongoose.connection.readyState !== 1) {
+      console.error(
+        "[brands:id] MongoDB not connected, readyState=",
+        mongoose.connection.readyState
+      );
+      return res.status(503).json({ error: "Database unavailable" });
+    }
     const b = await Brand.findById(req.params.id).lean();
     if (!b) return res.status(404).json({ error: "Not found" });
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;

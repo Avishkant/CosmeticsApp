@@ -41,6 +41,40 @@ app.use(sanitize);
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 app.use(limiter);
 
+// Lightweight timing + timeout middleware to improve responsiveness diagnostics.
+// Logs request duration and ensures requests that hang longer than `MAX_MS`
+// return a 503 to the client, preventing silent hangs in deployments.
+app.use((req, res, next) => {
+  const start = Date.now();
+  const MAX_MS = Number(process.env.REQUEST_TIMEOUT_MS || 15000); // default 15s
+
+  // When response finishes, log timing
+  res.on("finish", () => {
+    const ms = Date.now() - start;
+    console.log(
+      `[timing] ${req.method} ${req.originalUrl} ${res.statusCode} ${ms}ms`
+    );
+  });
+
+  // Setup timeout handler that sends a 503 if nothing sent within MAX_MS
+  const timer = setTimeout(() => {
+    if (!res.headersSent) {
+      console.error(
+        `[timeout] Request exceeded ${MAX_MS}ms: ${req.method} ${req.originalUrl}`
+      );
+      try {
+        res.status(503).json({ error: "Server timeout" });
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, MAX_MS);
+
+  res.on("finish", () => clearTimeout(timer));
+  res.on("close", () => clearTimeout(timer));
+  next();
+});
+
 // Health
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 

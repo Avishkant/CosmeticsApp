@@ -4,6 +4,7 @@ import { isAuthenticated, logout, saveUser, getUser } from "../lib/auth";
 import api from "../lib/api";
 import { useEffect, useState } from "react";
 import { useCart } from "../contexts/CartContext";
+import logo from "../assets/logo.svg";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -57,9 +58,9 @@ export default function Header() {
           <Link
             to={currentUser && currentUser.role === "admin" ? "/admin" : "/"}
             className="brand"
+            aria-label="Beautiq home"
           >
-            <div className="logo">B</div>
-            <div className="brand-name">Beautiq</div>
+            <img src={logo} alt="Beautiq" className="logo site-logo" />
           </Link>
         </div>
 
@@ -169,13 +170,13 @@ export default function Header() {
                 <Link to="/products?category=Sale" className="nav-link">
                   Sale
                 </Link>
-                <Link to="/products?category=Skin%20Care" className="nav-link">
+                <Link to="/skin-care" className="nav-link">
                   Skin Care
                 </Link>
-                <Link to="/products?category=Hair" className="nav-link">
+                <Link to="/hair" className="nav-link">
                   Hair
                 </Link>
-                <Link to="/products?category=Makeup" className="nav-link">
+                <Link to="/makeup" className="nav-link">
                   Makeup
                 </Link>
                 <Link to="/lip-care" className="nav-link">
@@ -187,7 +188,7 @@ export default function Header() {
                 >
                   Bath &amp; Body
                 </Link>
-                <Link to="/products?category=Fragrance" className="nav-link">
+                <Link to="/fragrance" className="nav-link">
                   Fragrance
                 </Link>
                 <Link to="/products?category=Self%20Care" className="nav-link">

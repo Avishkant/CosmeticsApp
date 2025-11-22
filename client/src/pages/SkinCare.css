@@ -1,0 +1,325 @@
+:root {
+  --accent: #7f5af0;
+  --muted: #f3f4f6;
+  --text: #0b1220;
+}
+
+.skin-page {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial;
+  color: var(--text);
+}
+
+.skin-hero {
+  background-size: cover;
+  background-position: center;
+  padding: 6rem 0;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.skin-hero .hero-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+.hero-text {
+  max-width: 640px;
+}
+.title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  margin: 0 0 0.5rem;
+  background: linear-gradient(90deg, #fff 0%, #ffe 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.subtitle {
+  opacity: 0.95;
+  margin-bottom: 1.25rem;
+  font-size: 1.05rem;
+}
+.hero-ctas .btn {
+  margin-right: 0.6rem;
+}
+
+.hero-preview {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.floating-card {
+  width: 160px;
+  height: 220px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.02)
+  );
+  backdrop-filter: blur(6px);
+  box-shadow: 0 12px 30px rgba(3, 8, 20, 0.35);
+  border-radius: 14px;
+  padding: 8px;
+  transform: translateY(0);
+  transition: transform 0.45s ease, box-shadow 0.3s ease;
+}
+.floating-card.small {
+  width: 120px;
+  height: 160px;
+}
+.floating-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.floating-card:hover {
+  transform: translateY(-8px) rotate(-1deg);
+  box-shadow: 0 22px 40px rgba(3, 8, 20, 0.45);
+}
+
+/* floating animation for hero preview */
+.floating-card {
+  animation: float 6s ease-in-out infinite;
+}
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* title shimmer */
+.title {
+  background: linear-gradient(90deg, #fff 0%, #ffe 50%, #fff 100%);
+  background-size: 200% 100%;
+  animation: shimmer 6s linear infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+/* product card hover micro-interaction */
+.product-card {
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+}
+.product-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 28px 50px rgba(6, 8, 20, 0.1);
+}
+.product-card .media img {
+  transition: transform 0.6s ease;
+}
+.product-card:hover .media img {
+  transform: scale(1.06);
+}
+
+/* subtle reveal stagger for grid items */
+.grid .product-card {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.grid.reveal.is-visible .product-card {
+  opacity: 1;
+  transform: none;
+}
+
+.floating-card.large {
+  width: 260px;
+  height: 320px;
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chip {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+.chip:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.muted {
+  color: #667085;
+  font-size: 0.95rem;
+}
+
+.testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.testimonial {
+  background: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(6, 8, 20, 0.06);
+}
+.testimonial p {
+  margin: 0 0 8px;
+}
+.testimonial .author {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* newsletter */
+.newsletter {
+  border-radius: 12px;
+}
+
+.features {
+  padding: 3.5rem 0;
+}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+.feature {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(10, 12, 20, 0.06);
+  transition: transform 0.28s ease;
+}
+.feature:hover {
+  transform: translateY(-6px);
+}
+.feature .icon {
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.product-grid {
+  padding: 3rem 0;
+}
+.section-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+.product-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+}
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 18px 40px rgba(6, 8, 20, 0.08);
+}
+.product-card .media {
+  height: 180px;
+  overflow: hidden;
+}
+.product-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.meta {
+  padding: 12px;
+}
+.meta h4 {
+  margin: 0 0 6px;
+}
+.price {
+  color: var(--accent);
+  font-weight: 600;
+}
+.card-ctas {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 8px;
+}
+
+.learn-more {
+  padding: 3rem 0;
+}
+.learn-inner {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+.learn-image img {
+  width: 420px;
+  height: 280px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* Reveal animations */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* small screens */
+@media (max-width: 900px) {
+  .hero-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hero-preview {
+    order: 2;
+  }
+  .hero-text {
+    order: 1;
+  }
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  .learn-inner {
+    flex-direction: column;
+  }
+  .learn-image img {
+    width: 100%;
+    height: auto;
+  }
+  .testimonial-grid {
+    grid-template-columns: 1fr;
+  }
+  .floating-card.large {
+    width: 100%;
+    height: 300px;
+  }
+}

@@ -123,6 +123,10 @@ router.delete(
 
 // POST /api/coupons/validate
 router.post("/coupons/validate", async (req, res, next) => {
+  console.log(
+    "[coupons.validate] request body:",
+    JSON.stringify(req.body || {})
+  );
   try {
     const { code, subtotal = 0, userId, items } = req.body;
     if (!code) return res.status(400).json({ error: "Code required" });
@@ -130,6 +134,11 @@ router.post("/coupons/validate", async (req, res, next) => {
       code: code.toUpperCase(),
       active: true,
     });
+    console.log(
+      "[coupons.validate] coupon found:",
+      !!coupon,
+      coupon && coupon.code
+    );
     if (!coupon) return res.status(404).json({ error: "Invalid code" });
 
     const now = new Date();
@@ -208,19 +217,19 @@ router.post("/coupons/validate", async (req, res, next) => {
                 .map(String)
                 .includes(String(prod.brandId || prod.brand))
             ) {
-              applicableSubtotal += price * qty;
+              applicableSubtotal += price * qty;2
               matched++;
             }
           }
         }
         if (matched === 0)
-          return res
+          return res 
             .status(400)
             .json({ error: "Coupon does not apply to selected items" });
       }
     } catch (e) {
       // fall back to total subtotal on any error computing appliesTo
-      applicableSubtotal = Number(subtotal) || 0;
+      applicableSubtotal = Number(subtotal) || 0; 
     }
 
     let amount = 0;
@@ -230,6 +239,12 @@ router.post("/coupons/validate", async (req, res, next) => {
       // flat amount should not exceed applicable subtotal
       amount = Math.min(Number(coupon.value || 0), applicableSubtotal);
     }
+    console.log(
+      "[coupons.validate] applicableSubtotal:",
+      applicableSubtotal,
+      "amount:",
+      amount
+    );
 
     res.json({ data: { code: coupon.code, amount } });
   } catch (err) {
