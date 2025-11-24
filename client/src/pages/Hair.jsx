@@ -64,7 +64,7 @@ export default function Hair() {
           </div>
 
           <div className="hidden lg:block w-1/2 relative">
-            <div className="absolute -right-12 top-6 space-y-6">
+            <div className="absolute right-8 top-1/2 transform -translate-y-1/2 space-y-6 z-20">
               <div className="floating-card w-48 h-64 rounded-xl overflow-hidden shadow-2xl reveal">
                 <img
                   src={images[1]}

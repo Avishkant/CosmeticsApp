@@ -17,6 +17,7 @@ import Brands from "./pages/Brands";
 import LipCare from "./pages/LipCare";
 import SkinCare from "./pages/SkinCare";
 import Hair from "./pages/Hair";
+import BathBody from "./pages/BathBody";
 import Makeup from "./pages/MakeupPage";
 import Fragrance from "./pages/Fragrance";
 import AdminCategories from "./pages/AdminCategories";
@@ -43,6 +44,7 @@ function App() {
             <Route path="/brands" element={<Brands />} />
             <Route path="/skin-care" element={<SkinCare />} />
             <Route path="/hair" element={<Hair />} />
+            <Route path="/bath-body" element={<BathBody />} />
             <Route path="/makeup" element={<Makeup />} />
             <Route path="/fragrance" element={<Fragrance />} />
             <Route path="/lip-care" element={<LipCare />} />

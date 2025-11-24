@@ -1,6 +1,7 @@
+// Backup of Home.jsx — created before responsive hero changes
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import "./Home.responsive.css";
 
 // Candidate public paths (fallbacks). Kept at module scope so hooks don't need it as a changing dependency.
 const candidates = [
@@ -114,7 +115,7 @@ export default function Home() {
         } else {
           if (mounted) setCategories(chosen);
         }
-      } catch {
+      } catch (e) {
         if (mounted) setCategories([]);
       }
     })();
@@ -139,7 +140,7 @@ export default function Home() {
       // keep original ordering by filename
       urls.sort();
       if (mounted) setTrending(urls);
-    } catch {
+    } catch (e) {
       if (mounted) setTrending([]);
     }
     return () => {
@@ -149,155 +150,115 @@ export default function Home() {
 
   return (
     <div>
-      <div className="hero-wrap">
-        <div className="hero-slider">
+      <div className="hero-wrap" style={{ padding: "0 40px" }}>
+        <div
+          className="hero-slider"
+          style={{
+            height: 520,
+            position: "relative",
+            overflow: "hidden",
+            width: "100%",
+            maxWidth: 1400,
+            margin: "0 auto",
+          }}
+        >
           {slides.map((src, i) => (
             <img
               key={src}
               src={src}
               alt={`slide-${i}`}
-              className="hero-slide"
-              style={{ transform: `translateX(${(i - idx) * 100}%)` }}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                backgroundColor: "var(--bg, #fff)",
+                transform: `translateX(${(i - idx) * 100}%)`,
+                transition: "transform 450ms ease",
+              }}
             />
           ))}
 
           {/* Sticky overlay text that does not move with slides */}
-          <div className="hero-overlay">
+          <div
+            style={{
+              position: "absolute",
+              left: 96,
+              bottom: 40,
+              zIndex: 3,
+              color: "#000",
+              maxWidth: 600,
+              pointerEvents: "auto",
+            }}
+          >
             <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 6 }}>
               We've Got
             </div>
-            <h1 className="hero-title">A DEAL</h1>
-            <p className="hero-sub">
+            <h1
+              style={{
+                margin: 0,
+                fontSize: 72,
+                lineHeight: 1,
+                fontWeight: 900,
+              }}
+            >
+              A DEAL
+            </h1>
+            <p style={{ color: "var(--muted)", marginTop: 12, maxWidth: 520 }}>
               Shop on our website and sign up for notifications to unlock
               tomorrow’s web-exclusive offer. Trust us—you don’t want to miss
               it.
             </p>
-            <div className="hero-cta">
-              <button className="px-4 py-2 bg-black text-white font-bold rounded">
-                SHOP NOW
-              </button>
-            </div>
+            <button
+              style={{
+                marginTop: 12,
+                background: "#000",
+                color: "#fff",
+                border: "none",
+                padding: "10px 16px",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              SHOP NOW
+            </button>
           </div>
 
-          <button aria-label="Previous" className="hero-prev" onClick={prev}>
+          <button aria-label="Previous" className="prev" onClick={prev}>
             ‹
           </button>
-          <button aria-label="Next" className="hero-next" onClick={next}>
+
+          <button aria-label="Next" className="next" onClick={next}>
             ›
           </button>
 
-          <div className="hero-dots">
+          <div
+            style={{
+              position: "absolute",
+              bottom: 12,
+              left: 12,
+              display: "flex",
+              gap: 8,
+            }}
+          >
             {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setIdx(i)}
-                className={`w-2.5 h-2.5 rounded-full border-0 ${
-                  i === idx ? "bg-white" : "bg-white/60"
-                }`}
-              ></button>
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 10,
+                  border: "none",
+                  background: i === idx ? "white" : "rgba(255,255,255,0.5)",
+                  cursor: "pointer",
+                }}
+              />
             ))}
           </div>
         </div>
       </div>
 
-      {/* <div className="app-container" style={{ marginTop: 18 }}>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <Link to="/products" className="card hover-card" style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700 }}>Shop Now</div>
-            <div style={{ color: "var(--muted)", marginTop: 6 }}>
-              Explore our curated cosmetics.
-            </div>
-          </Link>
-          <div className="card" style={{ flex: 2 }}>
-            <h3 style={{ marginBottom: 8 }}>Welcome to Beautiq</h3>
-            <p style={{ color: "var(--muted)" }}>
-              Beautiq is a modern cosmetics storefront. This demo landing page
-              shows a simple hero carousel; place your images in
-              `client/public/assets/boutiq/` with names `slide1.jpg`,
-              `slide2.jpg`, `slide3.jpg` to populate the hero.
-            </p>
-          </div>
-        </div>
-      </div> */}
-
-      {/* Shop by Category section */}
-      <div className="app-container" style={{ marginTop: 64 }}>
-        <h2 className="text-center text-3xl md:text-4xl font-extrabold mb-16 md:mb-20">
-          Shop by Category
-        </h2>
-        <div className="flex justify-center gap-10 mt-12 md:mt-16 flex-nowrap">
-          {(categories.length ? categories : ["", "", "", "", "", ""]).map(
-            (src, i) => {
-              return (
-                <Link
-                  to="/products"
-                  key={i}
-                  className="w-40 md:w-48 text-center no-underline category-item flex-shrink-0"
-                >
-                  <div className="relative flex flex-col items-center">
-                    {/* larger image positioned to overlap the circle and extend below it */}
-                    {src ? (
-                      <img
-                        src={src}
-                        alt={`category-${i}`}
-                        className="w-40 h-40 md:w-48 md:h-48 object-cover -mt-4 md:-mt-5 relative z-10"
-                      />
-                    ) : (
-                      <div className="w-40 h-40 md:w-48 md:h-48 -mt-4 md:-mt-5" />
-                    )}
-                  </div>
-                  {/* Label text exists elsewhere; do not render custom labels here */}
-                </Link>
-              );
-            }
-          )}
-        </div>
-      </div>
-      {/* Trending tiles section */}
-      <div className="app-container" style={{ marginTop: 96 }}>
-        <h2 className="text-center text-3xl md:text-4xl font-extrabold mb-8">
-          Trending
-        </h2>
-        <div className="trending-grid">
-          {(trending.length ? trending : ["", "", "", "", "", ""])
-            .slice(0, 6)
-            .map((src, i) => (
-              <Link
-                to="/products"
-                key={i}
-                className="trend-card"
-                aria-label={`trending-${i}`}
-              >
-                {src ? (
-                  // Larger tiles: use a slightly taller aspect ratio and enforce a minHeight
-                  <div
-                    style={{
-                      width: "100%",
-                      aspectRatio: "4/3",
-                      minHeight: 260,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <img
-                      src={src}
-                      alt={`trending-${i}`}
-                      className="trend-img"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      width: "100%",
-                      aspectRatio: "4/3",
-                      minHeight: 260,
-                      background: "linear-gradient(180deg,#fff,#f3f4f6)",
-                    }}
-                  />
-                )}
-              </Link>
-            ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+      {/* ... rest omitted for brevity */}

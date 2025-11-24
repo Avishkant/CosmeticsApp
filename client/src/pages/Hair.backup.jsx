@@ -40,6 +40,7 @@ export default function Hair() {
             </div>
           </div>
 
+
           <div className="hero-preview reveal">
             <div className="floating-card">
               <img src={sampleImages[0]} alt="treatment" />
